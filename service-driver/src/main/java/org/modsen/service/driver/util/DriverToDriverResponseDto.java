@@ -12,7 +12,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DriverToDriverResponseDto implements Converter<Driver, DriverResponseDto> {
 
-    private final CarToCarResponseDtoConverter converter;
+    private final CarMapper carMapper;
     @Override
     public DriverResponseDto convert(Driver source) {
         return DriverResponseDto.builder()
@@ -20,7 +20,8 @@ public class DriverToDriverResponseDto implements Converter<Driver, DriverRespon
                 .name(source.getName())
                 .phoneNumber(source.getPhoneNumber())
                 .sex(source.getSex())
-                .car(Optional.of(converter.convert(source.getCar())).orElse(null))
+                .car(Optional.ofNullable(carMapper.carToCarResponseDto(source.getCar()))
+                        .orElse(null))
                 .build();
     }
 }
