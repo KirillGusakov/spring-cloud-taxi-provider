@@ -1,0 +1,77 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Kirill
+      changes:
+        - createTable:
+            tableName: car
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: color
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: model
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: number
+                  type: VARCHAR(7)
+                  constraints:
+                    nullable: false
+                    unique: true
+
+  - changeSet:
+      id: 2
+      author: Kirill
+      changes:
+        - createTable:
+            tableName: driver
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: car_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: name
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone_number
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: sex
+                  type: VARCHAR(1)
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 3
+      author: Kirill
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: fk_driver_car
+            baseTableName: driver
+            baseColumnNames: car_id
+            referencedTableName: car
+            referencedColumnNames: id
+            onDelete: SET NULL
