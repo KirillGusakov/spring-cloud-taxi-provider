@@ -14,4 +14,5 @@ public class CarResponseDto {
     private String color;
     private String model;
     private String number;
+    private DriverResponseDto driverResponseDto;
 }

@@ -12,7 +12,6 @@ import org.modsen.service.driver.model.Sex;
 @AllArgsConstructor
 public class DriverResponseDto {
     private Long id;
-    private CarResponseDto car;
     private String name;
     private String phoneNumber;
     private Sex sex;

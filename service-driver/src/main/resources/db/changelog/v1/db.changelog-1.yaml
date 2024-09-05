@@ -28,6 +28,11 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                     unique: true
+              - column:
+                  name: driver_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
 
   - changeSet:
       id: 2
@@ -42,11 +47,6 @@ databaseChangeLog:
                   autoIncrement: true
                   constraints:
                     primaryKey: true
-              - column:
-                  name: car_id
-                  type: BIGINT
-                  constraints:
-                    nullable: true
               - column:
                   name: name
                   type: VARCHAR(50)
@@ -69,9 +69,9 @@ databaseChangeLog:
       author: Kirill
       changes:
         - addForeignKeyConstraint:
-            constraintName: fk_driver_car
-            baseTableName: driver
-            baseColumnNames: car_id
-            referencedTableName: car
+            constraintName: fk_car_driver
+            baseTableName: car
+            baseColumnNames: driver_id
+            referencedTableName: driver
             referencedColumnNames: id
             onDelete: SET NULL

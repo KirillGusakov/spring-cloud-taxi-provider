@@ -49,10 +49,12 @@ public class CarController {
     public ResponseEntity<List<CarResponseDto>> getAllCars(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size,
-            @RequestParam(value = "sort", defaultValue = "id") String sortField
+            @RequestParam(value = "sort", defaultValue = "id") String sortField,
+            @RequestParam(value = "model", required = false) String model,
+            @RequestParam(value = "number", required = false) String number
     ) {
-        List<CarResponseDto> all = carService.findAll(
-                PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortField)));
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortField));
+        List<CarResponseDto> all = carService.findAll(pageRequest, model, number);
         return new ResponseEntity<>(all, HttpStatus.OK);
     }
 

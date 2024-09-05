@@ -11,5 +11,5 @@ public interface DriverService {
     DriverResponseDto updateDriver(Long id, DriverRequestDto driver);
     void deleteDriver(Long id);
     DriverResponseDto getDriver(Long id);
-    List<DriverResponseDto> getDrivers(Pageable pageable);
+    List<DriverResponseDto> getDrivers(Pageable pageable, String name, String phone);
 }

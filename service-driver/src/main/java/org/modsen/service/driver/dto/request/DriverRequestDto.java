@@ -1,6 +1,7 @@
 package org.modsen.service.driver.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,14 +15,15 @@ import org.modsen.service.driver.model.Sex;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DriverRequestDto {
-    private Long carId;
 
     @NotBlank(message = "Name must not be empty or consist of spaces")
-    @Size(message = "Name size min 2", min = 2)
+    @Size(min = 2, max = 50, message = "Name size must be between 2 and 50 characters")
     private String name;
 
     @NotBlank(message = "Phone number must not be empty or consist of spaces")
-    @Size(message = "Phone number size min 2", min = 2)
+    @Pattern(regexp = "^\\+?[0-9]{8,13}$",
+            message = "Phone number must be between 8 " +
+                    "and 13 digits and can optionally start with '+'")
     private String phoneNumber;
 
     private Sex sex;

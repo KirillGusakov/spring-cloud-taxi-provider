@@ -7,8 +7,8 @@ import org.modsen.service.driver.exception.DuplicateResourceException;
 import org.modsen.service.driver.model.Driver;
 import org.modsen.service.driver.repository.DriverRepository;
 import org.modsen.service.driver.service.DriverService;
-import org.modsen.service.driver.util.DriverRequestDtoToDriver;
-import org.modsen.service.driver.util.DriverToDriverResponseDto;
+import org.modsen.service.driver.util.DriverMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,18 +21,17 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class DriverServiceImpl implements DriverService {
     private final DriverRepository driverRepository;
-    private final DriverToDriverResponseDto driverToDriverResponseDto;
-    private final DriverRequestDtoToDriver driverRequestDtoToDriver;
+    private final DriverMapper driverMapper;
 
     @Override
     public DriverResponseDto saveDriver(DriverRequestDto driver) {
         boolean isExists = driverRepository.existsByPhoneNumber(driver.getPhoneNumber());
-        if(isExists) {
+        if (isExists) {
             throw new DuplicateResourceException("Driver with phone number "
                     + driver.getPhoneNumber() + " already exists");
         }
-        Driver save = driverRepository.save(driverRequestDtoToDriver.convert(driver));
-        return driverToDriverResponseDto.convert(save);
+        Driver save = driverRepository.save(driverMapper.driverRequestDtoToDriver(driver));
+        return driverMapper.driverToDriverResponseDto(save);
     }
 
     @Override
@@ -44,7 +43,7 @@ public class DriverServiceImpl implements DriverService {
         driverToChange.setPhoneNumber(driver.getPhoneNumber());
         driverToChange.setSex(driver.getSex());
 
-        return driverToDriverResponseDto.convert(driverRepository.save(driverToChange));
+        return driverMapper.driverToDriverResponseDto(driverRepository.save(driverToChange));
     }
 
     @Override
@@ -58,15 +57,21 @@ public class DriverServiceImpl implements DriverService {
     public DriverResponseDto getDriver(Long id) {
         Driver driver
                 = driverRepository.findById(id).orElseThrow(NoSuchElementException::new);
-        return driverToDriverResponseDto.convert(driver);
+        return driverMapper.driverToDriverResponseDto(driver);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<DriverResponseDto> getDrivers(Pageable pageable) {
-        return driverRepository.findAll(pageable)
-                .stream()
-                .map(driverToDriverResponseDto::convert)
+    public List<DriverResponseDto> getDrivers(Pageable pageable, String name, String phone) {
+        Page<Driver> drivers =
+                driverRepository.findByNameContainingIgnoreCaseAndPhoneNumberContaining(
+                        name != null ? name : "",
+                        phone != null ? phone : "",
+                        pageable
+                );
+
+        return drivers.stream()
+                .map(driverMapper::driverToDriverResponseDto)
                 .toList();
     }
 }

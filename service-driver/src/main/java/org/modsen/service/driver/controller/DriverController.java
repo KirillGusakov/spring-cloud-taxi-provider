@@ -56,10 +56,12 @@ public class DriverController {
     public ResponseEntity<List<DriverResponseDto>> getAllDrivers(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size,
-            @RequestParam(value = "sort", defaultValue = "id") String sortField
+            @RequestParam(value = "sort", defaultValue = "id") String sortField,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "phone", required = false) String phone
     ) {
-        List<DriverResponseDto> drivers = driverService.getDrivers(
-                PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortField)));
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortField));
+        List<DriverResponseDto> drivers = driverService.getDrivers(pageRequest, name, phone);
         return new ResponseEntity<>(drivers, HttpStatus.OK);
     }
 }

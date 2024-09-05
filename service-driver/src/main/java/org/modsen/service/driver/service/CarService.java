@@ -11,5 +11,5 @@ public interface CarService {
     CarResponseDto update(Long id, CarRequestDto car);
     void deleteCar(Long id);
     CarResponseDto findById(Long id);
-    List<CarResponseDto> findAll(Pageable pageable);
+    List<CarResponseDto> findAll(Pageable pageable, String model, String number);
 }
