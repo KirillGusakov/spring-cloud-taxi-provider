@@ -1,6 +1,5 @@
 package org.modsen.service.driver.model;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,5 +33,3 @@ public class Driver {
     @Enumerated(value = EnumType.STRING)
     private Sex sex;
 }
-
-

@@ -9,7 +9,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.modsen.service.driver.model.Sex;
 
-
 @Data
 @Builder
 @NoArgsConstructor
