@@ -28,8 +28,9 @@ public class RideRequest {
     private String destinationAddress;
 
     @NotNull(message = "Ride status cannot be null")
-    @Pattern(regexp = "^(CREATED|ACCEPTED|COMPLETED|CANCELLED)$", message = "Status must be: CREATED or IN_PROGRESS " +
-            "or COMPLETED or CANCELLED")
+    @Pattern(regexp = "^(CREATED|ACCEPTED|COMPLETED|CANCELED|EN_ROUTE_TO_DESTINATION|EN_ROUTE_TO_PASSENGER)$",
+            message = "Status must be: CREATED or ACCEPTED " +
+            "or COMPLETED or CANCELLED or EN_ROUTE_TO_PASSENGER or EN_ROUTE_TO_DESTINATION")
     private String status;
 
     @NotNull(message = "Price cannot be null")

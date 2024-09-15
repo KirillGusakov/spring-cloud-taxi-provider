@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.modsen.service.driver.model.Sex;
 
 @Data
 @Builder
@@ -25,5 +24,6 @@ public class DriverRequestDto {
                     "and 13 digits and can optionally start with '+'")
     private String phoneNumber;
 
-    private Sex sex;
+    @Pattern(regexp = "M|F", message = "Sex can only be 'M' or 'F'")
+    private String sex;
 }

@@ -9,6 +9,8 @@ import org.modsen.serviceride.model.Ride;
 import org.modsen.serviceride.model.RideStatus;
 import org.modsen.serviceride.repository.RideRepository;
 import org.modsen.serviceride.service.RideService;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,17 +36,28 @@ public class RideServiceImpl implements RideService {
     @Override
     @Transactional(readOnly = true)
     public List<RideResponse> findAll(Pageable pageable, RideFilterDto filterDto) {
-        List<Ride> rides = rideRepository.findAllWithFilters(
-                filterDto.getDriverId(),
-                filterDto.getPassengerId(),
-                filterDto.getPickupAddress(),
-                filterDto.getDestinationAddress(),
-                filterDto.getStatus(),
-                filterDto.getMinPrice(),
-                filterDto.getMaxPrice(),
-                pageable);
+        Ride ride = Ride.builder()
+                .driverId(filterDto.getDriverId())
+                .passengerId(filterDto.getPassengerId())
+                .destinationAddress(filterDto.getDestinationAddress())
+                .pickupAddress(filterDto.getPickupAddress())
+                .status(filterDto.getStatus() != null ?
+                        RideStatus.valueOf(filterDto.getStatus().toUpperCase()) : null)
+                .build();
 
-        return rides.stream().map(rideMapper::toRideResponse).toList();
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnoreNullValues()
+                .withMatcher("driverId", ExampleMatcher.GenericPropertyMatchers.exact())
+                .withMatcher("passengerId", ExampleMatcher.GenericPropertyMatchers.exact())
+                .withMatcher("destinationAddress", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+                .withMatcher("pickupAddress", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+                .withMatcher("status", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
+
+        Example<Ride> rideExample = Example.of(ride, matcher);
+        return rideRepository.findAll(rideExample, pageable)
+                .stream()
+                .map(rideMapper::toRideResponse)
+                .toList();
     }
 
     @Override
@@ -70,7 +83,6 @@ public class RideServiceImpl implements RideService {
 
         ride = rideRepository.save(ride);
         return rideMapper.toRideResponse(ride);
-
     }
 
     @Override

@@ -42,7 +42,7 @@ public class ExceptionHandlerControllerAdvice {
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(code = HttpStatus.BAD_REQUEST)
     public ErrorResponse illegalArgumentException(IllegalArgumentException e) {
-        return new ErrorResponse(e.getMessage() + "\nStatus must be: CREATED or ACCEPTED " +
-                "or COMPLETED or CANCELLED");
+        return new ErrorResponse(e.getMessage() + ". Status must be: CREATED or ACCEPTED " +
+                "or COMPLETED or CANCELED or EN_ROUTE_TO_DESTINATION or EN_ROUTE_TO_PASSENGER");
     }
 }

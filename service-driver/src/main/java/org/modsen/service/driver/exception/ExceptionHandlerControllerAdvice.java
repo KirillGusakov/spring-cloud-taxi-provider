@@ -45,7 +45,7 @@ public class ExceptionHandlerControllerAdvice {
     public ErrorMessage onRuntimeException(
             RuntimeException e
     ) {
-        return new ErrorMessage("No such element with this id");
+        return new ErrorMessage(e.getMessage());
     }
 
     @ExceptionHandler(DuplicateResourceException.class)

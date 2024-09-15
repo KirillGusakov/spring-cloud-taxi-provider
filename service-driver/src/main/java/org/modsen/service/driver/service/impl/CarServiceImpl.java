@@ -14,7 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -56,6 +55,12 @@ public class CarServiceImpl implements CarService {
 
         Car carToChange = carRepository.findById(id)
                 .orElseThrow(NoSuchElementException::new);
+
+        boolean isExists = carRepository.existsByNumber(car.getNumber());
+        if (isExists) {
+            throw new DuplicateResourceException("Car with this number is already exists");
+        }
+
         carToChange.setDriver(driver);
         carToChange.setModel(car.getModel());
         carToChange.setColor(car.getColor());
