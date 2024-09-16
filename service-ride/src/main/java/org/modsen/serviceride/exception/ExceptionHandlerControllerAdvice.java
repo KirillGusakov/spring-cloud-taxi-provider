@@ -34,7 +34,7 @@ public class ExceptionHandlerControllerAdvice {
     }
 
     @ExceptionHandler(NoSuchElementException.class)
-    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    @ResponseStatus(code = HttpStatus.NOT_FOUND)
     public ErrorResponse noSuchElementException(NoSuchElementException e) {
         return new ErrorResponse(e.getMessage());
     }
@@ -44,5 +44,11 @@ public class ExceptionHandlerControllerAdvice {
     public ErrorResponse illegalArgumentException(IllegalArgumentException e) {
         return new ErrorResponse(e.getMessage() + ". Status must be: CREATED or ACCEPTED " +
                 "or COMPLETED or CANCELED or EN_ROUTE_TO_DESTINATION or EN_ROUTE_TO_PASSENGER");
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(code = HttpStatus.NOT_FOUND)
+    public ErrorResponse notFoundException(NotFoundException e) {
+        return new ErrorResponse(e.getMessage());
     }
 }

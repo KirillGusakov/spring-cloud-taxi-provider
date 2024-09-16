@@ -65,8 +65,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public DriverResponseDto getDriver(Long id) {
-        Driver driver
-                = driverRepository.findById(id).orElseThrow(
+        Driver driver = driverRepository.findById(id).orElseThrow(
                 ()-> new NoSuchElementException("Driver with id " + id + " does not exist")
         );
         return driverMapper.driverToDriverResponseDto(driver);

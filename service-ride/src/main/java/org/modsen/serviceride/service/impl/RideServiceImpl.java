@@ -1,9 +1,15 @@
 package org.modsen.serviceride.service.impl;
 
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import org.modsen.serviceride.client.DriverClient;
+import org.modsen.serviceride.client.PassengerClient;
 import org.modsen.serviceride.dto.filter.RideFilterDto;
 import org.modsen.serviceride.dto.request.RideRequest;
+import org.modsen.serviceride.dto.response.DriverResponse;
+import org.modsen.serviceride.dto.response.PassengerResponse;
 import org.modsen.serviceride.dto.response.RideResponse;
+import org.modsen.serviceride.exception.NotFoundException;
 import org.modsen.serviceride.mapper.RideMapper;
 import org.modsen.serviceride.model.Ride;
 import org.modsen.serviceride.model.RideStatus;
@@ -24,6 +30,8 @@ import java.util.NoSuchElementException;
 public class RideServiceImpl implements RideService {
     private final RideRepository rideRepository;
     private final RideMapper rideMapper;
+    private final DriverClient driverClient;
+    private final PassengerClient passengerClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -62,6 +70,8 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public RideResponse save(RideRequest rideRequest) {
+        DriverResponse driverResponse = getDriverResponse(rideRequest.getDriverId());
+        PassengerResponse passengerResponse = getPassengerResponse(rideRequest.getPassengerId());
         Ride ride = rideMapper.toRide(rideRequest);
         ride.setOrderTime(LocalDateTime.now());
         ride.setStatus(RideStatus.CREATED);
@@ -73,6 +83,9 @@ public class RideServiceImpl implements RideService {
     public RideResponse update(Long id, RideRequest rideRequest) {
         Ride ride = rideRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Ride not found"));
+
+        DriverResponse driverResponse = getDriverResponse(rideRequest.getDriverId());
+        PassengerResponse passengerResponse = getPassengerResponse(rideRequest.getPassengerId());
 
         ride.setId(id);
         ride.setPrice(rideRequest.getPrice());
@@ -100,5 +113,23 @@ public class RideServiceImpl implements RideService {
         ride.setStatus(RideStatus.valueOf(status.toUpperCase()));
         Ride updatedRide = rideRepository.save(ride);
         return rideMapper.toRideResponse(ride);
+    }
+
+    private DriverResponse getDriverResponse(Long id) {
+        try{
+            return driverClient.getDriver(id);
+        }
+        catch (FeignException.FeignClientException exception){
+            throw new NotFoundException("Driver with id = " + id + " not found");
+        }
+    }
+
+    private PassengerResponse getPassengerResponse(Long id) {
+        try{
+            return passengerClient.getPassenger(id);
+        }
+        catch (FeignException.FeignClientException exception){
+            throw new NotFoundException("Passenger with id = " + id + " not found");
+        }
     }
 }

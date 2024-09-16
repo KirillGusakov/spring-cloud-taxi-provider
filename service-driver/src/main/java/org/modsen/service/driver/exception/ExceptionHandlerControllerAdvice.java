@@ -41,9 +41,9 @@ public class ExceptionHandlerControllerAdvice {
     }
 
     @ExceptionHandler(NoSuchElementException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorMessage onRuntimeException(
-            RuntimeException e
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorMessage onNoSuchElementException(
+            NoSuchElementException e
     ) {
         return new ErrorMessage(e.getMessage());
     }
