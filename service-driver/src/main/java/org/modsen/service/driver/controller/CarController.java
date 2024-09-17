@@ -4,26 +4,30 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modsen.service.driver.dto.request.CarRequestDto;
 import org.modsen.service.driver.dto.response.CarResponseDto;
+import org.modsen.service.driver.dto.response.PageResponse;
 import org.modsen.service.driver.service.CarService;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.GetMapping;
-import java.util.List;
+import org.springframework.web.bind.annotation.RestController;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/v1/car")
+@RequestMapping("api/v1/cars")
 public class CarController {
+
     private final CarService carService;
 
     @PostMapping
@@ -46,7 +50,7 @@ public class CarController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CarResponseDto>> getAllCars(
+    public ResponseEntity<Map<String, Object>> getAllCars(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size,
             @RequestParam(value = "sort", defaultValue = "id") String sortField,
@@ -54,8 +58,19 @@ public class CarController {
             @RequestParam(value = "number", required = false) String number
     ) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortField));
-        List<CarResponseDto> all = carService.findAll(pageRequest, model, number);
-        return new ResponseEntity<>(all, HttpStatus.OK);
+        Page<CarResponseDto> carPage = carService.findAll(pageRequest, model, number);
+        Map<String, Object> response = new HashMap<>();
+
+        PageResponse pageResponse = PageResponse.builder()
+                .currentPage(carPage.getNumber())
+                .totalItems(carPage.getTotalElements())
+                .totalPages(carPage.getTotalPages())
+                .pageSize(carPage.getSize())
+                .build();
+
+        response.put("cars", carPage.getContent());
+        response.put("pageInfo", pageResponse);
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")

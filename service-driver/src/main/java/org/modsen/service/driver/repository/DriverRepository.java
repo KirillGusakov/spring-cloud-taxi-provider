@@ -6,6 +6,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DriverRepository extends JpaRepository<Driver, Long> {
-    boolean existsByPhoneNumber(String number);
+    boolean existsByPhoneNumberAndIdNot(String number, Long id);
     Page<Driver> findByNameContainingIgnoreCaseAndPhoneNumberContaining(String name, String phone, Pageable pageable);
 }

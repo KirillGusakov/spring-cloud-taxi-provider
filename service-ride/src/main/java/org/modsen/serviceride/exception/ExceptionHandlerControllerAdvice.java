@@ -2,10 +2,12 @@ package org.modsen.serviceride.exception;
 
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -46,9 +48,9 @@ public class ExceptionHandlerControllerAdvice {
                 "or COMPLETED or CANCELED or EN_ROUTE_TO_DESTINATION or EN_ROUTE_TO_PASSENGER");
     }
 
-    @ExceptionHandler(NotFoundException.class)
-    @ResponseStatus(code = HttpStatus.NOT_FOUND)
-    public ErrorResponse notFoundException(NotFoundException e) {
-        return new ErrorResponse(e.getMessage());
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> notFoundException(ResponseStatusException e) {
+        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+        return new ResponseEntity<>(errorResponse, e.getStatusCode());
     }
 }

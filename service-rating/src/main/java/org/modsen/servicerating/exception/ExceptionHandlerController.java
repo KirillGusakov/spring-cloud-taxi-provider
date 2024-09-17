@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpClientErrorException;
-
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -44,12 +43,6 @@ public class ExceptionHandlerController {
     @ExceptionHandler(HttpClientErrorException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ExceptionResponse onHttpClientErrorException(HttpClientErrorException ex) {
-        return new ExceptionResponse(ex.getMessage());
-    }
-
-    @ExceptionHandler(NotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ExceptionResponse onNotFoundException(NotFoundException ex) {
         return new ExceptionResponse(ex.getMessage());
     }
 }

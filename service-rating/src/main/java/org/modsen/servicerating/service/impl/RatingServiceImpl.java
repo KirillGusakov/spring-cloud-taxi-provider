@@ -1,23 +1,21 @@
 package org.modsen.servicerating.service.impl;
 
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import org.modsen.servicerating.client.DriverClient;
+import org.modsen.servicerating.client.PassengerClient;
 import org.modsen.servicerating.dto.request.RatingRequest;
 import org.modsen.servicerating.dto.response.DriverResponse;
 import org.modsen.servicerating.dto.response.PassengerResponse;
 import org.modsen.servicerating.dto.response.RatingResponse;
-import org.modsen.servicerating.exception.NotFoundException;
 import org.modsen.servicerating.mapper.RatingMapper;
 import org.modsen.servicerating.model.Rating;
 import org.modsen.servicerating.repository.RatingRepository;
 import org.modsen.servicerating.service.RatingService;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClient;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -27,34 +25,28 @@ public class RatingServiceImpl implements RatingService {
 
     private final RatingRepository ratingRepository;
     private final RatingMapper ratingMapper;
-    private final RestClient restClient;
-    @Value("${request.passenger}")
-    private String requestPassenger;
-    @Value("${request.driver}")
-    private String requestDriver;
-
+    private final DriverClient driverClient;
+    private final PassengerClient passengerClient;
 
     @Override
     @Transactional(readOnly = true)
     public RatingResponse findById(Long id) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("No such rating with " + id + " id"));
+                new NoSuchElementException("Rating with id =  " + id + " not found"));
         return ratingMapper.toRatingResponse(rating);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<RatingResponse> findAll(Pageable pageable, Long driverId, Long userId, Integer rating) {
-        List<Rating> byFilter = ratingRepository.findByFilter(driverId, userId, rating, pageable);
-        return byFilter.stream()
-                .map(ratingMapper::toRatingResponse)
-                .toList();
+    public Page<RatingResponse> findAll(Pageable pageable, Long driverId, Long userId, Integer rating) {
+        Page<Rating> pageByFilter = ratingRepository.findByFilter(driverId, userId, rating, pageable);
+        return pageByFilter.map(ratingMapper::toRatingResponse);
     }
 
     @Override
     public RatingResponse save(RatingRequest ratingRequest) {
-        DriverResponse driverById = getDriverById(ratingRequest.getDriverId());
-        PassengerResponse passengerById = getPassengerById(ratingRequest.getUserId());
+        DriverResponse driverResponse = getDriverResponse(ratingRequest.getDriverId());
+        PassengerResponse passengerResponse = getPassengerResponse(ratingRequest.getUserId());
         Rating rating = ratingMapper.toRating(ratingRequest);
         Rating save = ratingRepository.save(rating);
         return ratingMapper.toRatingResponse(save);
@@ -63,10 +55,10 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public RatingResponse update(Long id, RatingRequest ratingRequest) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("No such rating with " + id + " id"));
+                new NoSuchElementException("Rating with id =  " + id + " not found"));
 
-        DriverResponse driverById = getDriverById(ratingRequest.getDriverId());
-        PassengerResponse passengerById = getPassengerById(ratingRequest.getUserId());
+        DriverResponse driverResponse = getDriverResponse(ratingRequest.getDriverId());
+        PassengerResponse passengerResponse = getPassengerResponse(ratingRequest.getUserId());
 
         ratingMapper.updateRating(ratingRequest, rating);
         Rating save = ratingRepository.save(rating);
@@ -76,47 +68,30 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public void delete(Long id) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("No such rating with " + id + " id"));
+                new NoSuchElementException("Rating with id =  " + id + " not found"));
         ratingRepository.deleteById(id);
     }
 
     @Override
     public Double getAverageRatingForDriver(Long id) {
         return ratingRepository.findAverageRatingByDriverId(id)
-                .orElseThrow(() -> new NoSuchElementException("No such driver with " + id + " id"));
+                .orElseThrow(() -> new NoSuchElementException("Driver with id =  " + id + " not found"));
     }
 
-    public PassengerResponse getPassengerById(Long id) {
+    private DriverResponse getDriverResponse(Long id) {
         try {
-            PassengerResponse body = restClient.get()
-                    .uri(requestPassenger + id)
-                    .retrieve()
-                    .body(PassengerResponse.class);
-            return body;
-        }
-        catch (HttpClientErrorException exception) {
-            if(exception.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
-                throw new NotFoundException("Passenger with id = " + id + " not found");
-            } else {
-                throw exception;
-            }
+            DriverResponse driver = driverClient.getDriver(id);
+            return driver;
+        } catch (FeignException.NotFound e) {
+            throw new NoSuchElementException("Driver with id = " + id + " not found");
         }
     }
 
-    public DriverResponse getDriverById(Long id) {
+    private PassengerResponse getPassengerResponse(Long id) {
         try {
-            DriverResponse body = restClient.get()
-                    .uri(requestDriver + id)
-                    .retrieve()
-                    .body(DriverResponse.class);
-            return body;
-        }
-        catch (HttpClientErrorException exception) {
-            if(exception.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
-                throw new NotFoundException("Driver with id = " + id + " not found");
-            } else {
-                throw exception;
-            }
+            return passengerClient.getPassenger(id);
+        } catch (FeignException.NotFound exception) {
+            throw new NoSuchElementException("Passenger with id = " + id + " not found");
         }
     }
 }

@@ -3,10 +3,13 @@ package org.modsen.servicerating.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modsen.servicerating.dto.request.RatingRequest;
+import org.modsen.servicerating.dto.response.PageResponse;
 import org.modsen.servicerating.dto.response.RatingResponse;
 import org.modsen.servicerating.service.RatingService;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,17 +20,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/rating")
+@RequestMapping("/api/v1/ratings")
 public class RatingController {
 
     private final RatingService ratingService;
 
     @GetMapping
-    public ResponseEntity<List<RatingResponse>> findAll(
+    public ResponseEntity<Map<String, Object>> findAll(
             @RequestParam(name = "page", defaultValue = "0") Integer page,
             @RequestParam(name = "size", defaultValue = "10") Integer size,
             @RequestParam(name = "sort", defaultValue = "id,asc") String sort,
@@ -43,8 +47,19 @@ public class RatingController {
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, asc);
-        List<RatingResponse> all = ratingService.findAll(pageRequest, driverId, userId, rating);
-        return ResponseEntity.ok(all);
+        Page<RatingResponse> ridePage = ratingService.findAll(pageRequest, driverId, userId, rating);
+
+        Map<String, Object> response = new HashMap();
+        PageResponse pageResponse = PageResponse.builder()
+                .currentPage(ridePage.getNumber())
+                .totalItems(ridePage.getTotalElements())
+                .totalPages(ridePage.getTotalPages())
+                .pageSize(ridePage.getSize())
+                .build();
+
+        response.put("ratings", ridePage.getContent());
+        response.put("pageInfo", pageResponse);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -55,14 +70,14 @@ public class RatingController {
     @PutMapping("/{id}")
     public ResponseEntity<RatingResponse> updateRating(@PathVariable("id") Long id,
                                                        @RequestBody @Valid RatingRequest ratingRequest) {
-        RatingResponse update = ratingService.update(id, ratingRequest);
-        return ResponseEntity.ok(update);
+        RatingResponse updated = ratingService.update(id, ratingRequest);
+        return ResponseEntity.ok(updated);
     }
 
     @PostMapping
     public ResponseEntity<RatingResponse> createRating(@RequestBody @Valid RatingRequest ratingRequest) {
-        RatingResponse save = ratingService.save(ratingRequest);
-        return ResponseEntity.ok(save);
+        RatingResponse savedRating = ratingService.save(ratingRequest);
+        return new ResponseEntity<>(savedRating, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")
