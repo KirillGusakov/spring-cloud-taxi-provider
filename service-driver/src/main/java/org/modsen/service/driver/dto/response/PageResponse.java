@@ -6,12 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class CarResponseDto {
-    private Long id;
-    private String color;
-    private String model;
-    private String number;
+@NoArgsConstructor
+@Builder
+public class PageResponse {
+    private Integer currentPage;
+    private Long totalItems;
+    private Integer totalPages;
+    private Integer pageSize;
 }

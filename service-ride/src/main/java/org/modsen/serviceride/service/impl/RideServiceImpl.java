@@ -11,17 +11,18 @@ import org.modsen.serviceride.repository.RideRepository;
 import org.modsen.serviceride.service.RideService;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class RideServiceImpl implements RideService {
+
     private final RideRepository rideRepository;
     private final RideMapper rideMapper;
 
@@ -29,13 +30,13 @@ public class RideServiceImpl implements RideService {
     @Transactional(readOnly = true)
     public RideResponse findById(Long id) {
         Ride ride = rideRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("Ride not found"));
+                new NoSuchElementException("Ride with id = " + id + " not found"));
         return rideMapper.toRideResponse(ride);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<RideResponse> findAll(Pageable pageable, RideFilterDto filterDto) {
+    public Page<RideResponse> findAll(Pageable pageable, RideFilterDto filterDto) {
         Ride ride = Ride.builder()
                 .driverId(filterDto.getDriverId())
                 .passengerId(filterDto.getPassengerId())
@@ -55,9 +56,7 @@ public class RideServiceImpl implements RideService {
 
         Example<Ride> rideExample = Example.of(ride, matcher);
         return rideRepository.findAll(rideExample, pageable)
-                .stream()
-                .map(rideMapper::toRideResponse)
-                .toList();
+                .map(rideMapper::toRideResponse);
     }
 
     @Override
@@ -72,7 +71,7 @@ public class RideServiceImpl implements RideService {
     @Override
     public RideResponse update(Long id, RideRequest rideRequest) {
         Ride ride = rideRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("Ride not found"));
+                new NoSuchElementException("Ride with id = " + id + " not found"));
 
         ride.setId(id);
         ride.setPrice(rideRequest.getPrice());
@@ -88,17 +87,17 @@ public class RideServiceImpl implements RideService {
     @Override
     public void delete(Long id) {
         rideRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("Ride not found"));
+                new NoSuchElementException("Ride with id = " + id + " not found"));
         rideRepository.deleteById(id);
     }
 
     @Override
     public RideResponse updateRideStatus(Long id, String status) {
         Ride ride = rideRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Ride not found"));
+                .orElseThrow(() -> new NoSuchElementException("Ride with id = " + id + " not found"));
 
         ride.setStatus(RideStatus.valueOf(status.toUpperCase()));
-        Ride updatedRide = rideRepository.save(ride);
+        rideRepository.save(ride);
         return rideMapper.toRideResponse(ride);
     }
 }

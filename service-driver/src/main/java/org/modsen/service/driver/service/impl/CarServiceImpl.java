@@ -14,13 +14,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class CarServiceImpl implements CarService {
+
     private final CarRepository carRepository;
     private final DriverRepository driverRepository;
     private final CarMapper carMapper;
@@ -30,10 +30,10 @@ public class CarServiceImpl implements CarService {
         Driver driver = null;
         if (car.getDriverId() != null) {
             driver = driverRepository.findById(car.getDriverId()).orElseThrow(
-                    () -> new NoSuchElementException("driver not found"));
+                    () -> new NoSuchElementException("Driver with id = " + car.getDriverId() + " not found"));
         }
 
-        boolean isExists = carRepository.existsByNumber(car.getNumber());
+        boolean isExists = carRepository.existsByNumberAndIdNot(car.getNumber(), 0L);
         if (isExists) {
             throw new DuplicateResourceException("Car with number "
                     + car.getNumber() + " already exists");
@@ -50,15 +50,16 @@ public class CarServiceImpl implements CarService {
         Driver driver = null;
         if (car.getDriverId() != null) {
             driver = driverRepository.findById(car.getDriverId()).orElseThrow(
-                    () -> new NoSuchElementException("driver not found"));
+                    () -> new NoSuchElementException("Driver with id = " + car.getDriverId() + " not found"));
         }
 
         Car carToChange = carRepository.findById(id)
                 .orElseThrow(NoSuchElementException::new);
 
-        boolean isExists = carRepository.existsByNumber(car.getNumber());
+        boolean isExists = carRepository.existsByNumberAndIdNot(car.getNumber(), id);
         if (isExists) {
-            throw new DuplicateResourceException("Car with this number is already exists");
+            throw new DuplicateResourceException("Car with number "
+                    + car.getNumber() + " already exists");
         }
 
         carToChange.setDriver(driver);
@@ -71,7 +72,8 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public void deleteCar(Long id) {
-        carRepository.findById(id).orElseThrow(NoSuchElementException::new);
+        carRepository.findById(id).orElseThrow(()
+                -> new NoSuchElementException("Car with id = " + id + " not found"));
         carRepository.deleteById(id);
     }
 
@@ -84,16 +86,13 @@ public class CarServiceImpl implements CarService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CarResponseDto> findAll(Pageable pageable, String model, String number) {
+    public Page<CarResponseDto> findAll(Pageable pageable, String model, String number) {
         Page<Car> cars =
                 carRepository.findByModelContainingIgnoreCaseAndNumberContainingIgnoreCase(
                         model != null ? model : "",
                         number != null ? number : "",
                         pageable
                 );
-
-        return cars.stream()
-                .map(carMapper::carToCarResponseDto)
-                .toList();
+        return cars.map(carMapper::carToCarResponseDto);
     }
 }

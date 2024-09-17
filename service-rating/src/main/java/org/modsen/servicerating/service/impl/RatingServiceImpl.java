@@ -7,10 +7,10 @@ import org.modsen.servicerating.mapper.RatingMapper;
 import org.modsen.servicerating.model.Rating;
 import org.modsen.servicerating.repository.RatingRepository;
 import org.modsen.servicerating.service.RatingService;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -25,17 +25,15 @@ public class RatingServiceImpl implements RatingService {
     @Transactional(readOnly = true)
     public RatingResponse findById(Long id) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("No such rating with " + id + " id"));
+                new NoSuchElementException("Rating with id =  " + id + " not found"));
         return ratingMapper.toRatingResponse(rating);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<RatingResponse> findAll(Pageable pageable, Long driverId, Long userId, Integer rating) {
-        List<Rating> byFilter = ratingRepository.findByFilter(driverId, userId, rating, pageable);
-        return byFilter.stream()
-                .map(ratingMapper::toRatingResponse)
-                .toList();
+    public Page<RatingResponse> findAll(Pageable pageable, Long driverId, Long userId, Integer rating) {
+        Page<Rating> pageByFilter = ratingRepository.findByFilter(driverId, userId, rating, pageable);
+        return pageByFilter.map(ratingMapper::toRatingResponse);
     }
 
     @Override
@@ -48,8 +46,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public RatingResponse update(Long id, RatingRequest ratingRequest) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("No such rating with " + id + " id"));
-
+                new NoSuchElementException("Rating with id =  " + id + " not found"));
         ratingMapper.updateRating(ratingRequest, rating);
         Rating save = ratingRepository.save(rating);
         return ratingMapper.toRatingResponse(save);
@@ -58,13 +55,13 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public void delete(Long id) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("No such rating with " + id + " id"));
+                new NoSuchElementException("Rating with id =  " + id + " not found"));
         ratingRepository.deleteById(id);
     }
 
     @Override
     public Double getAverageRatingForDriver(Long id) {
         return ratingRepository.findAverageRatingByDriverId(id)
-                .orElseThrow(() -> new NoSuchElementException("No such driver with " + id + " id"));
+                .orElseThrow(() -> new NoSuchElementException("Driver with id =  " + id + " not found"));
     }
 }

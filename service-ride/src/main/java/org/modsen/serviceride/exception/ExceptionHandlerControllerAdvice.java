@@ -34,7 +34,7 @@ public class ExceptionHandlerControllerAdvice {
     }
 
     @ExceptionHandler(NoSuchElementException.class)
-    @ResponseStatus(code = HttpStatus.BAD_REQUEST)
+    @ResponseStatus(code = HttpStatus.NOT_FOUND)
     public ErrorResponse noSuchElementException(NoSuchElementException e) {
         return new ErrorResponse(e.getMessage());
     }

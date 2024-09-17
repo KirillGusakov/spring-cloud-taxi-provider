@@ -6,6 +6,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CarRepository extends JpaRepository<Car, Long> {
-    boolean existsByNumber(String number);
+    boolean existsByNumberAndIdNot(String number, Long id);
     Page<Car> findByModelContainingIgnoreCaseAndNumberContainingIgnoreCase(String model, String number, Pageable pageable);
 }

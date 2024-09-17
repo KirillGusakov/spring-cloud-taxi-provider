@@ -10,16 +10,17 @@ import org.modsen.servicepassenger.repository.PassengerRepository;
 import org.modsen.servicepassenger.service.PassengerService;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class PassengerServiceImpl implements PassengerService {
+
     private final PassengerRepository passengerRepository;
     private final PassengerMapper passengerMapper;
 
@@ -27,13 +28,13 @@ public class PassengerServiceImpl implements PassengerService {
     @Transactional(readOnly = true)
     public PassengerResponseDto findById(Long id) {
         Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id).orElseThrow(
-                () -> new NoSuchElementException("Passenger with this id not found"));
+                () -> new NoSuchElementException("Passenger with id = " + id + " not found"));
         return passengerMapper.toPassengerResponseDto(passenger);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<PassengerResponseDto> findAll(Pageable pageable, String email, String name, String phone,
+    public Page<PassengerResponseDto> findAll(Pageable pageable, String email, String name, String phone,
                                               Boolean isDeleted) {
         Passenger passenger = Passenger.builder()
                 .email(email)
@@ -50,11 +51,8 @@ public class PassengerServiceImpl implements PassengerService {
                 .withMatcher("isDeleted", ExampleMatcher.GenericPropertyMatchers.exact());
 
         Example<Passenger> example = Example.of(passenger, matcher);
-
         return passengerRepository.findAll(example, pageable)
-                .stream()
-                .map(passengerMapper::toPassengerResponseDto)
-                .toList();
+                .map(passengerMapper::toPassengerResponseDto);
     }
 
     @Override
@@ -70,7 +68,7 @@ public class PassengerServiceImpl implements PassengerService {
     @Override
     public PassengerResponseDto update(Long id, PassengerRequestDto passengerRequestDto) {
         Passenger passenger = passengerRepository.findById(id).orElseThrow(
-                () -> new NoSuchElementException("Passenger with this id not found"));
+                () -> new NoSuchElementException("Passenger with id = " + id + " not found"));
         extracted(passengerRequestDto);
 
         passenger.setId(id);
@@ -87,7 +85,7 @@ public class PassengerServiceImpl implements PassengerService {
     @Override
     public void delete(Long id) {
         Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id).orElseThrow(() ->
-                new NoSuchElementException("Passenger with this id not found"));
+                new NoSuchElementException("Passenger with id = " + id + " not found"));
         passenger.setIsDeleted(true);
         passengerRepository.save(passenger);
     }
