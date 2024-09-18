@@ -6,6 +6,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -34,8 +35,14 @@ public class ExceptionHandlerController {
     }
 
     @ExceptionHandler(NoSuchElementException.class)
-    @ResponseStatus(code = HttpStatus.NOT_FOUND)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public ExceptionResponse onNoSuchElementException(NoSuchElementException ex) {
+        return new ExceptionResponse(ex.getMessage());
+    }
+
+    @ExceptionHandler(HttpClientErrorException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ExceptionResponse onHttpClientErrorException(HttpClientErrorException ex) {
         return new ExceptionResponse(ex.getMessage());
     }
 }

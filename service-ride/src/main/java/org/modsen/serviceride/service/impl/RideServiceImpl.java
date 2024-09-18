@@ -1,8 +1,12 @@
 package org.modsen.serviceride.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.modsen.serviceride.client.DriverClient;
+import org.modsen.serviceride.client.PassengerClient;
 import org.modsen.serviceride.dto.filter.RideFilterDto;
 import org.modsen.serviceride.dto.request.RideRequest;
+import org.modsen.serviceride.dto.response.DriverResponse;
+import org.modsen.serviceride.dto.response.PassengerResponse;
 import org.modsen.serviceride.dto.response.RideResponse;
 import org.modsen.serviceride.mapper.RideMapper;
 import org.modsen.serviceride.model.Ride;
@@ -25,6 +29,8 @@ public class RideServiceImpl implements RideService {
 
     private final RideRepository rideRepository;
     private final RideMapper rideMapper;
+    private final DriverClient driverClient;
+    private final PassengerClient passengerClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -61,6 +67,8 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public RideResponse save(RideRequest rideRequest) {
+        DriverResponse driver = driverClient.getDriver(rideRequest.getDriverId());
+        PassengerResponse passenger = passengerClient.getPassenger(rideRequest.getPassengerId());
         Ride ride = rideMapper.toRide(rideRequest);
         ride.setOrderTime(LocalDateTime.now());
         ride.setStatus(RideStatus.CREATED);
@@ -72,6 +80,9 @@ public class RideServiceImpl implements RideService {
     public RideResponse update(Long id, RideRequest rideRequest) {
         Ride ride = rideRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Ride with id = " + id + " not found"));
+
+        DriverResponse driver = driverClient.getDriver(rideRequest.getDriverId());
+        PassengerResponse passenger = passengerClient.getPassenger(rideRequest.getPassengerId());
 
         ride.setId(id);
         ride.setPrice(rideRequest.getPrice());
