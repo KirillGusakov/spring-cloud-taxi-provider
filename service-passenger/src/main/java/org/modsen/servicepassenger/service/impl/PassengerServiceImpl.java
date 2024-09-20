@@ -57,7 +57,7 @@ public class PassengerServiceImpl implements PassengerService {
 
     @Override
     public PassengerResponseDto save(PassengerRequestDto passengerRequestDto) {
-        extracted(passengerRequestDto);
+        extracted(passengerRequestDto, 0L);
 
         Passenger passenger = passengerMapper.toPassenger(passengerRequestDto);
         passenger.setIsDeleted(false);
@@ -69,7 +69,7 @@ public class PassengerServiceImpl implements PassengerService {
     public PassengerResponseDto update(Long id, PassengerRequestDto passengerRequestDto) {
         Passenger passenger = passengerRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("Passenger with id = " + id + " not found"));
-        extracted(passengerRequestDto);
+        extracted(passengerRequestDto, id);
 
         passenger.setId(id);
         passenger.setEmail(passengerRequestDto.getEmail());
@@ -90,14 +90,14 @@ public class PassengerServiceImpl implements PassengerService {
         passengerRepository.save(passenger);
     }
 
-    private void extracted(PassengerRequestDto passengerRequestDto) {
-        boolean isExisted = passengerRepository.existsByEmail(passengerRequestDto.getEmail());
+    private void extracted(PassengerRequestDto passengerRequestDto, Long id) {
+        boolean isExisted = passengerRepository.existsByEmailAndIdNot(passengerRequestDto.getEmail(), id);
         if (isExisted) {
             throw new DuplicateResourceException("Passenger with " +
                     passengerRequestDto.getEmail() + " already exists");
         }
 
-        isExisted = passengerRepository.existsByPhoneNumber(passengerRequestDto.getPhoneNumber());
+        isExisted = passengerRepository.existsByPhoneNumberAndIdNot(passengerRequestDto.getPhoneNumber(), id);
         if (isExisted) {
             throw new DuplicateResourceException("Passenger with " +
                     passengerRequestDto.getPhoneNumber() + " already exists");

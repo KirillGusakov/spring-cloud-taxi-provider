@@ -2,7 +2,6 @@ package org.modsen.service.driver.exception;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-
 import java.util.List;
 
 @Getter

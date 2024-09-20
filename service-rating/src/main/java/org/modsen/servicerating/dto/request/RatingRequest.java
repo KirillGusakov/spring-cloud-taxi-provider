@@ -1,5 +1,6 @@
 package org.modsen.servicerating.dto.request;
 
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -16,17 +17,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RatingRequest {
 
-    @NotNull(message = "Driver id can't be null")
-    private Long driverId;
-
-    @NotNull(message = "User id can't be null")
-    private Long userId;
+    @NotNull(message = "Rating id can't be null")
+    @Min(value = 1, message = "Rating must be at least 1")
+    @Max(value = 5, message = "Rating must be at most 5")
+    @Digits(integer = 1, fraction = 0, message = "Rating must be an integer")
+    @Column(name = "driver_rating")
+    private Integer driverRating;
 
     @NotNull(message = "Rating id can't be null")
     @Min(value = 1, message = "Rating must be at least 1")
     @Max(value = 5, message = "Rating must be at most 5")
     @Digits(integer = 1, fraction = 0, message = "Rating must be an integer")
-    private Integer rating;
+    @Column(name = "passenger_rating")
+    private Integer passengerRating;
 
     @Size(max = 255, message = "A comment can have a maximum length of 255 characters.")
     private String comment;

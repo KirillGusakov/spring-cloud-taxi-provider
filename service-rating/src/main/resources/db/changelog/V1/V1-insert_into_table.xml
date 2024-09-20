@@ -8,16 +8,21 @@
         <insert tableName="rating">
             <column name="driver_id" value="1"/>
             <column name="user_id" value="1"/>
+            <column name="ride_id" value= "1"/>
             <column name="comment" value="Excellent service!"/>
-            <column name="rating" value="5"/>
+            <column name="driver_rating" value="5"/>
+            <column name="passenger_rating" value="4"/>
         </insert>
 
         <insert tableName="rating">
             <column name="driver_id" value="2"/>
             <column name="user_id" value="2"/>
+            <column name="ride_id" value="1"/>
             <column name="comment" value="Good, but could improve timing."/>
-            <column name="rating" value="4"/>
+            <column name="driver_rating" value="4"/>
+            <column name="passenger_rating" value="3"/>
         </insert>
     </changeSet>
+
 </databaseChangeLog>
 
