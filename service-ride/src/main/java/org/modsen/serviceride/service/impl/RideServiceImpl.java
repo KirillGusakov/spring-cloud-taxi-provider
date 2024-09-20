@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.modsen.serviceride.client.DriverClient;
 import org.modsen.serviceride.client.PassengerClient;
 import org.modsen.serviceride.dto.filter.RideFilterDto;
+import org.modsen.serviceride.dto.message.RatingMessage;
 import org.modsen.serviceride.dto.request.RideRequest;
 import org.modsen.serviceride.dto.response.DriverResponse;
 import org.modsen.serviceride.dto.response.PassengerResponse;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -31,6 +33,7 @@ public class RideServiceImpl implements RideService {
     private final RideMapper rideMapper;
     private final DriverClient driverClient;
     private final PassengerClient passengerClient;
+    private final KafkaTemplate <String, RatingMessage> kafkaTemplate;
 
     @Override
     @Transactional(readOnly = true)
@@ -73,6 +76,14 @@ public class RideServiceImpl implements RideService {
         ride.setOrderTime(LocalDateTime.now());
         ride.setStatus(RideStatus.CREATED);
         ride = rideRepository.save(ride);
+
+        RatingMessage message = RatingMessage.builder()
+                .rideId(ride.getId())
+                .driverId(driver.getId())
+                .passengerId(passenger.getId())
+                .build();
+
+        kafkaTemplate.send("rating-topic", message);
         return rideMapper.toRideResponse(ride);
     }
 

@@ -9,17 +9,16 @@ import org.modsen.servicerating.service.RatingService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +36,7 @@ public class RatingController {
             @RequestParam(name = "sort", defaultValue = "id,asc") String sort,
             @RequestParam(name = "driverId", required = false) Long driverId,
             @RequestParam(name = "userId", required = false) Long userId,
-            @RequestParam(name = "rating", required = false) Integer rating
+            @RequestParam(name = "driverRating", required = false) Integer driverRating
     ) {
         String[] split = sort.split(",");
         Sort asc = Sort.by(split[0]).ascending();
@@ -47,7 +46,7 @@ public class RatingController {
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, asc);
-        Page<RatingResponse> ridePage = ratingService.findAll(pageRequest, driverId, userId, rating);
+        Page<RatingResponse> ridePage = ratingService.findAll(pageRequest, driverId, userId, driverRating);
 
         Map<String, Object> response = new HashMap();
         PageResponse pageResponse = PageResponse.builder()
@@ -72,12 +71,6 @@ public class RatingController {
                                                        @RequestBody @Valid RatingRequest ratingRequest) {
         RatingResponse updated = ratingService.update(id, ratingRequest);
         return ResponseEntity.ok(updated);
-    }
-
-    @PostMapping
-    public ResponseEntity<RatingResponse> createRating(@RequestBody @Valid RatingRequest ratingRequest) {
-        RatingResponse savedRating = ratingService.save(ratingRequest);
-        return new ResponseEntity<>(savedRating, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")

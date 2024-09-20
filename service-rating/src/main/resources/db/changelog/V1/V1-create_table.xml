@@ -9,17 +9,29 @@
             <column name="id" type="bigserial" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+
             <column name="driver_id" type="bigint">
                 <constraints nullable="false"/>
             </column>
+
             <column name="user_id" type="bigint">
                 <constraints nullable="false"/>
             </column>
-            <column name="comment" type="varchar(255)">
+
+            <column name="ride_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="driver_rating" type="int">
                 <constraints nullable="true"/>
             </column>
-            <column name="rating" type="int">
-                <constraints  nullable="false"/>
+
+            <column name="passenger_rating" type="int">
+                <constraints nullable="true"/>
+            </column>
+
+            <column name="comment" type="varchar(255)">
+                <constraints nullable="true"/>
             </column>
         </createTable>
     </changeSet>

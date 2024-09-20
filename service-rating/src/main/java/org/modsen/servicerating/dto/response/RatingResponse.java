@@ -13,6 +13,8 @@ public class RatingResponse {
     private Long id;
     private Long driverId;
     private Long userId;
-    private Integer rating;
+    private Long rideId;
+    private Integer driverRating;
+    private Integer passengerRating;
     private String comment;
 }

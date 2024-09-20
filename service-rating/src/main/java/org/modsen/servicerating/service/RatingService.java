@@ -8,9 +8,7 @@ import org.springframework.data.domain.Pageable;
 public interface RatingService {
     RatingResponse findById(Long id);
 
-    Page<RatingResponse> findAll(Pageable pageable, Long driverId, Long userId, Integer rating);
-
-    RatingResponse save(RatingRequest ratingRequest);
+    Page<RatingResponse> findAll(Pageable pageable, Long driverId, Long userId, Integer driverRating);
 
     RatingResponse update(Long id, RatingRequest ratingRequest);
 

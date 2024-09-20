@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "rating")
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Rating {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +27,14 @@ public class Rating {
 
     @Column(name = "user_id")
     private Long userId;
-    private Integer rating;
+
+    @Column(name = "ride_id")
+    private Long rideId;
+
+    @Column(name = "driver_rating")
+    private Integer driverRating;
+
+    @Column(name = "passenger_rating")
+    private Integer passengerRating;
     private String comment;
 }
