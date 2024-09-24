@@ -70,7 +70,9 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public RideResponse save(RideRequest rideRequest) {
+        System.out.println("Вошел в сервис " );
         DriverResponse driver = driverClient.getDriver(rideRequest.getDriverId());
+        System.out.println("Драйвер успешно");
         PassengerResponse passenger = passengerClient.getPassenger(rideRequest.getPassengerId());
         Ride ride = rideMapper.toRide(rideRequest);
         ride.setOrderTime(LocalDateTime.now());

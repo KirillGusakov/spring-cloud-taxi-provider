@@ -27,6 +27,7 @@
         <url/>
     </scm>
     <properties>
+        <spring.version>3.3.3</spring.version>
         <java.version>21</java.version>
         <postgre.sql.version>42.7.4</postgre.sql.version>
         <map.struct>1.6.0</map.struct>
@@ -96,6 +97,11 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
