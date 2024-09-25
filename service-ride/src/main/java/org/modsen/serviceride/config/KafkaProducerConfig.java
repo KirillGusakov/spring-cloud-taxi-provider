@@ -24,7 +24,7 @@ public class KafkaProducerConfig {
     @Bean
     public NewTopic topic() {
         return TopicBuilder.name("rating-topic")
-                .partitions(2)
+                .partitions(1)
                 .replicas(1)
                 .build();
     }
@@ -33,6 +33,7 @@ public class KafkaProducerConfig {
     public ProducerFactory<String, RatingMessage> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         return new DefaultKafkaProducerFactory<>(configProps);
