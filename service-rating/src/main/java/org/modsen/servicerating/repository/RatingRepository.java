@@ -12,13 +12,13 @@ import java.util.Optional;
 @Repository
 public interface RatingRepository extends JpaRepository<Rating, Long> {
 
-    @Query("SELECT AVG(r.rating) FROM Rating r WHERE r.driverId = :driverId")
+    @Query("SELECT AVG(r.driverRating) FROM Rating r WHERE r.driverId = :driverId")
     Optional<Double> findAverageRatingByDriverId(@Param("driverId") Long driverId);
 
     @Query("SELECT r FROM Rating r " +
             "WHERE (:driverId IS NULL OR r.driverId = :driverId) " +
             "AND (:userId IS NULL OR r.userId = :userId) " +
-            "AND (:rating IS NULL OR r.rating = :rating)")
+            "AND (:rating IS NULL OR r.driverRating = :rating)")
     Page<Rating> findByFilter(@Param("driverId") Long driverId,
                               @Param("userId") Long userId,
                               @Param("rating") Integer rating,

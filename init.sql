@@ -1,0 +1,4 @@
+CREATE DATABASE driver_db;
+CREATE DATABASE passenger_db;
+CREATE DATABASE rating_db;
+CREATE DATABASE ride_db;

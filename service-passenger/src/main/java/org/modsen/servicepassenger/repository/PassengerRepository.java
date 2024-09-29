@@ -7,7 +7,7 @@ import java.util.Optional;
 public interface PassengerRepository extends JpaRepository<Passenger, Long> {
     Optional<Passenger> findByIdAndIsDeletedFalse(Long id);
 
-    boolean existsByEmail(String email);
+    boolean existsByEmailAndIdNot(String email, Long id);
 
-    boolean existsByPhoneNumber(String phone);
+    boolean existsByPhoneNumberAndIdNot(String phone, Long id);
 }

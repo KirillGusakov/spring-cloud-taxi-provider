@@ -1,4 +1,4 @@
-package org.modsen.service.driver.service.impl;
+package org.modsen.service.driver.service.impl.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.modsen.service.driver.dto.request.DriverRequestDto;
@@ -8,7 +8,7 @@ import org.modsen.service.driver.model.Driver;
 import org.modsen.service.driver.model.Sex;
 import org.modsen.service.driver.repository.CarRepository;
 import org.modsen.service.driver.repository.DriverRepository;
-import org.modsen.service.driver.service.DriverService;
+import org.modsen.service.driver.service.impl.DriverService;
 import org.modsen.service.driver.util.DriverMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
