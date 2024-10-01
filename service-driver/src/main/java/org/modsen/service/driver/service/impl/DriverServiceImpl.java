@@ -1,4 +1,4 @@
-package org.modsen.service.driver.service.impl.impl;
+package org.modsen.service.driver.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.modsen.service.driver.dto.request.DriverRequestDto;
@@ -8,7 +8,7 @@ import org.modsen.service.driver.model.Driver;
 import org.modsen.service.driver.model.Sex;
 import org.modsen.service.driver.repository.CarRepository;
 import org.modsen.service.driver.repository.DriverRepository;
-import org.modsen.service.driver.service.impl.DriverService;
+import org.modsen.service.driver.service.DriverService;
 import org.modsen.service.driver.util.DriverMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,16 +31,18 @@ public class DriverServiceImpl implements DriverService {
     public DriverResponseDto saveDriver(DriverRequestDto driver) {
         Set<String> carNumbers = new HashSet<>();
 
-        driver.getCars().forEach(car -> {
-            if (!carNumbers.add(car.getNumber())) {
-                throw new DuplicateResourceException("Duplicate car number found: " + car.getNumber());
-            }
-        });
+        if (driver.getCars() != null) {
+            driver.getCars().forEach(car -> {
+                if (!carNumbers.add(car.getNumber())) {
+                    throw new DuplicateResourceException("Duplicate car number found: " + car.getNumber());
+                }
+            });
+        }
 
         boolean isExists = driverRepository.existsByPhoneNumberAndIdNot(driver.getPhoneNumber(), 0L);
         if (isExists) {
             throw new DuplicateResourceException("Driver with phone number "
-                    + driver.getPhoneNumber() + " already exists");
+                                                 + driver.getPhoneNumber() + " already exists");
         }
 
         driver.getCars().stream()
@@ -48,7 +50,7 @@ public class DriverServiceImpl implements DriverService {
                 .findAny()
                 .ifPresent(carRequestDto -> {
                     throw new DuplicateResourceException("Car with number "
-                            + carRequestDto.getNumber() + " already exists");
+                                                         + carRequestDto.getNumber() + " already exists");
                 });
 
         Driver driverToDatabase = driverMapper.driverRequestDtoToDriver(driver);
@@ -68,7 +70,7 @@ public class DriverServiceImpl implements DriverService {
         boolean isExists = driverRepository.existsByPhoneNumberAndIdNot(driver.getPhoneNumber(), id);
         if (isExists) {
             throw new DuplicateResourceException("Driver with phone number "
-                    + driver.getPhoneNumber() + " already exists");
+                                                 + driver.getPhoneNumber() + " already exists");
         }
 
         driverToChange.setPhoneNumber(driver.getPhoneNumber());

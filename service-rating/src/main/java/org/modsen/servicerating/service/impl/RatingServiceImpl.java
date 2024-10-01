@@ -45,7 +45,7 @@ public class RatingServiceImpl implements RatingService {
     @Transactional(readOnly = true)
     public RatingResponse findById(Long id) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("Rating with id =  " + id + " not found"));
+                new NoSuchElementException("Rating with id = " + id + " not found"));
         return ratingMapper.toRatingResponse(rating);
     }
 
@@ -59,7 +59,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public RatingResponse update(Long id, RatingRequest ratingRequest) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("Rating with id =  " + id + " not found"));
+                new NoSuchElementException("Rating with id = " + id + " not found"));
 
         ratingMapper.updateRating(ratingRequest, rating);
         Rating save = ratingRepository.save(rating);
@@ -69,7 +69,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public void delete(Long id) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
-                new NoSuchElementException("Rating with id =  " + id + " not found"));
+                new NoSuchElementException("Rating with id = " + id + " not found"));
         ratingRepository.deleteById(id);
     }
 

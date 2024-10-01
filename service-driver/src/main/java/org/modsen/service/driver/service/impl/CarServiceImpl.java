@@ -1,4 +1,4 @@
-package org.modsen.service.driver.service.impl.impl;
+package org.modsen.service.driver.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.modsen.service.driver.dto.request.CarRequestDto;
@@ -8,7 +8,7 @@ import org.modsen.service.driver.model.Car;
 import org.modsen.service.driver.model.Driver;
 import org.modsen.service.driver.repository.CarRepository;
 import org.modsen.service.driver.repository.DriverRepository;
-import org.modsen.service.driver.service.impl.CarService;
+import org.modsen.service.driver.service.CarService;
 import org.modsen.service.driver.util.CarMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -80,7 +80,8 @@ public class CarServiceImpl implements CarService {
     @Override
     @Transactional(readOnly = true)
     public CarResponseDto findById(Long id) {
-        Car car = carRepository.findById(id).orElseThrow(NoSuchElementException::new);
+        Car car =  carRepository.findById(id).orElseThrow(()
+                -> new NoSuchElementException("Car with id = " + id + " not found"));;
         return carMapper.carToCarResponseDto(car);
     }
 

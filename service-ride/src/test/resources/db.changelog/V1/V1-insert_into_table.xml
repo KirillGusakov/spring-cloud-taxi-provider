@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.8.xsd">
+
+    <changeSet id="2" author="Kirill">
+        <insert tableName="ride">
+            <column name="driver_id" value="1"/>
+            <column name="passenger_id" value="2"/>
+            <column name="pickup_address" value="123 Main St"/>
+            <column name="destination_address" value="456 Elm St"/>
+            <column name="status" value="CREATED"/>
+            <column name="order_time" valueDate="2024-09-14T10:00:00"/>
+            <column name="price" value="25.50"/>
+        </insert>
+
+        <insert tableName="ride">
+            <column name="driver_id" value="2"/>
+            <column name="passenger_id" value="1"/>
+            <column name="pickup_address" value="789 Oak St"/>
+            <column name="destination_address" value="321 Pine St"/>
+            <column name="status" value="COMPLETED"/>
+            <column name="order_time" valueDate="2024-09-14T11:00:00"/>
+            <column name="price" value="30.00"/>
+        </insert>
+
+        <insert tableName="ride">
+            <column name="driver_id" value="2"/>
+            <column name="passenger_id" value="2"/>
+            <column name="pickup_address" value="555 Birch St"/>
+            <column name="destination_address" value="999 Cedar St"/>
+            <column name="status" value="CANCELED"/>
+            <column name="order_time" valueDate="2024-09-14T12:00:00"/>
+            <column name="price" value="15.00"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

@@ -23,4 +23,6 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
                               @Param("userId") Long userId,
                               @Param("rating") Integer rating,
                               Pageable pageable);
+
+    Optional<Rating>findByDriverIdAndUserIdAndRideId(Long driverId, Long userId, Long ride);
 }
