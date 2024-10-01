@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.modsen.service.driver.dto.request.DriverRequestDto;
 import org.modsen.service.driver.dto.response.DriverResponseDto;
 import org.modsen.service.driver.dto.response.PageResponse;
-import org.modsen.service.driver.service.impl.DriverService;
+import org.modsen.service.driver.service.DriverService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;

@@ -1,4 +1,4 @@
-package org.modsen.service.driver.service.impl;
+package org.modsen.service.driver.service;
 
 import org.modsen.service.driver.dto.request.CarRequestDto;
 import org.modsen.service.driver.dto.response.CarResponseDto;
