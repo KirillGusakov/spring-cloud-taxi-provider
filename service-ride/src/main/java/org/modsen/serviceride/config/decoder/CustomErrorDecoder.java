@@ -14,6 +14,14 @@ public class CustomErrorDecoder implements ErrorDecoder {
         String url = response.request().url();
         switch (httpStatus) {
             case NOT_FOUND -> {
+                if (url.contains("passengers")) {
+                    String passengerId = extractIdFromUrl(url, "passengers");
+                    return new NoSuchElementException("Passenger with id = " + passengerId + " not found");
+                }
+                if (url.contains("drivers")) {
+                    String driverId = extractIdFromUrl(url, "drivers");
+                    return new NoSuchElementException("Driver with id = " + driverId + " not found");
+                }
                 return new NoSuchElementException("Resource not found: " + url);
             }
             case INTERNAL_SERVER_ERROR -> {
@@ -24,4 +32,16 @@ public class CustomErrorDecoder implements ErrorDecoder {
             }
         }
     }
+
+    private String extractIdFromUrl(String url, String entity) {
+        String[] parts = url.split("/");
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i].equals(entity) && i + 1 < parts.length) {
+                return parts[i + 1];
+            }
+        }
+        return "unknown";
+    }
+
+
 }
