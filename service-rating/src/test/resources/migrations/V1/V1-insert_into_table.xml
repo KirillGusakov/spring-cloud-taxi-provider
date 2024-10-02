@@ -22,6 +22,15 @@
             <column name="driver_rating" value="4"/>
             <column name="passenger_rating" value="3"/>
         </insert>
+
+        <insert tableName="rating">
+            <column name="driver_id" value="3"/>
+            <column name="user_id" value="1"/>
+            <column name="ride_id" value="3"/>
+            <column name="comment" value="Sooo goooood"/>
+            <column name="driver_rating" value="5"/>
+            <column name="passenger_rating" value="5"/>
+        </insert>
     </changeSet>
 
 </databaseChangeLog>

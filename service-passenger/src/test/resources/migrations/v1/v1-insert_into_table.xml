@@ -28,6 +28,13 @@
             <column name="phone_number" value="+10987654321"/>
             <column name="is_deleted" value="false"/>
         </insert>
-    </changeSet>
 
+        <insert tableName="passenger">
+            <column name="first_name" value="Kirill"/>
+            <column name="last_name" value="Kirillov"/>
+            <column name="email" value="kirillov.kirillov@example.com"/>
+            <column name="phone_number" value="+109876888881"/>
+            <column name="is_deleted" value="false"/>
+        </insert>
+    </changeSet>
 </databaseChangeLog>

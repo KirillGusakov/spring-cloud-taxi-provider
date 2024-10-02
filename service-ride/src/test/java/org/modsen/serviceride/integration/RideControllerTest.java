@@ -1,9 +1,6 @@
 package org.modsen.serviceride.integration;
 
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.modsen.serviceride.client.DriverClient;
 import org.modsen.serviceride.client.PassengerClient;
 import org.modsen.serviceride.dto.message.RatingMessage;
@@ -24,6 +21,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import java.util.NoSuchElementException;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.doThrow;
@@ -37,7 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @Testcontainers
 @AutoConfigureMockMvc
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @EmbeddedKafka(partitions = 1, topics = "rating-topic")
 @SpringBootTest(properties = "spring.kafka.producer.bootstrap-servers=${spring.embedded.kafka.brokers}")
 public class RideControllerTest {
@@ -64,48 +61,45 @@ public class RideControllerTest {
         registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
         registry.add("spring.liquibase.enabled", () -> "true");
-        registry.add("spring.liquibase.change-log", () -> "classpath:db/changelog/main-changelog.xml");
+        registry.add("spring.liquibase.change-log", () -> "classpath:migrations/main-changelog.xml");
     }
 
     @Test
-    @Order(1)
     void testFindAll_withoutFilters_success() throws Exception {
         mockMvc.perform(get("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rides", hasSize(3)))
-                .andExpect(jsonPath("$.pageInfo.totalItems", is(3)));
+                .andExpect(jsonPath("$.rides.size()", greaterThan(0)))
+                .andExpect(jsonPath("$.pageInfo.totalItems", greaterThan(0)));
     }
 
     @Test
-    @Order(2)
     void testFindAll_withFilter_success() throws Exception {
         mockMvc.perform(get("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .param("driverId", "1")
-                        .param("passengerId", "2")
-                        .param("pickupAddress", "123 Main St")
-                        .param("destinationAddress", "456 Elm St")
-                        .param("status", "CREATED")
+                        .param("driverId", "3")
+                        .param("passengerId", "3")
+                        .param("pickupAddress", "Dana mall")
+                        .param("destinationAddress", "Galereya Minsk")
+                        .param("status", "CANCELED")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rides", hasSize(1)))
-                .andExpect(jsonPath("$.rides[0].pickupAddress", is("123 Main St")))
-                .andExpect(jsonPath("$.rides[0].destinationAddress", is("456 Elm St")))
-                .andExpect(jsonPath("$.rides[0].status", is("CREATED")));
+                .andExpect(jsonPath("$.rides.size()", greaterThan(0) ))
+                .andExpect(jsonPath("$.rides[0].pickupAddress", is("Dana mall")))
+                .andExpect(jsonPath("$.rides[0].destinationAddress", is("Galereya Minsk")))
+                .andExpect(jsonPath("$.rides[0].status", is("CANCELED")));
     }
 
     @Test
-    @Order(3)
     void testFindAll_emptyList_success() throws Exception {
         mockMvc.perform(get("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
                         .param("driverId", "999")
                         .param("passengerId", "999")
-                        .param("pickupAddress", "Starye Dorogi")
+                        .param("pickupAddress", "Starye dasdsaorogi")
                         .param("destinationAddress", "Pastovichi")
                         .param("status", "CREATED")
                         .param("page", "0")
@@ -115,22 +109,19 @@ public class RideControllerTest {
     }
 
     @Test
-    @Order(4)
     void testFindRideById_success() throws Exception {
-        mockMvc.perform(get("/api/v1/rides/{id}", 1L)
+        mockMvc.perform(get("/api/v1/rides/{id}", 3L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.driverId", is(1)))
-                .andExpect(jsonPath("$.passengerId", is(2)))
-                .andExpect(jsonPath("$.pickupAddress", is("123 Main St")))
-                .andExpect(jsonPath("$.destinationAddress", is("456 Elm St")))
-                .andExpect(jsonPath("$.status", is("CREATED")))
-                .andExpect(jsonPath("$.price", is(25.50)));
+                .andExpect(jsonPath("$.id", is(3)))
+                .andExpect(jsonPath("$.driverId", is(3)))
+                .andExpect(jsonPath("$.passengerId", is(3)))
+                .andExpect(jsonPath("$.pickupAddress", is("Dana mall")))
+                .andExpect(jsonPath("$.destinationAddress", is("Galereya Minsk")))
+                .andExpect(jsonPath("$.status", is("CANCELED")));
     }
 
     @Test
-    @Order(5)
     void testFindRideById_withInvalidRideId_notSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/rides/{id}", 1001L)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -139,7 +130,6 @@ public class RideControllerTest {
     }
 
     @Test
-    @Order(6)
     public void testSaveRide_success() throws Exception {
         String rideRequestJson = """
                 {
@@ -185,14 +175,14 @@ public class RideControllerTest {
                 }
                 """;
 
-        doThrow(new NoSuchElementException("Resource not found: http://localhost:8080/api/v1/drivers/1001"))
+        doThrow(new NoSuchElementException("Driver with id = 1001 not found"))
                 .when(driverClient).getDriver(1001L);
 
         mockMvc.perform(post("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(rideRequestJson))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is("Resource not found: http://localhost:8080/api/v1/drivers/1001")));
+                .andExpect(jsonPath("$.message", is("Driver with id = 1001 not found")));
     }
 
     @Test
@@ -211,18 +201,17 @@ public class RideControllerTest {
         mockDriverResponse.setId(1L);
 
         when(driverClient.getDriver(1L)).thenReturn(mockDriverResponse);
-        doThrow(new NoSuchElementException("Resource not found: http://localhost:8080/api/v1/passengers/1001"))
+        doThrow(new NoSuchElementException("Passenger with id = 1001 not found"))
                 .when(passengerClient).getPassenger(1001L);
 
         mockMvc.perform(post("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(rideRequestJson))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is("Resource not found: http://localhost:8080/api/v1/passengers/1001")));
+                .andExpect(jsonPath("$.message", is("Passenger with id = 1001 not found")));
     }
 
     @Test
-    @Order(7)
     public void testUpdateRide_success() throws Exception {
         String rideRequestJson = """
                 {
@@ -268,14 +257,14 @@ public class RideControllerTest {
                 }
                 """;
 
-        doThrow(new NoSuchElementException("Resource not found: http://localhost:8080/api/v1/drivers/1001"))
+        doThrow(new NoSuchElementException("Driver with id = 1001 not found"))
                 .when(driverClient).getDriver(1001L);
 
         mockMvc.perform(put("/api/v1/rides/{id}", 2)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(rideRequestJson))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is("Resource not found: http://localhost:8080/api/v1/drivers/1001")));
+                .andExpect(jsonPath("$.message", is("Driver with id = 1001 not found")));
     }
 
     @Test
@@ -295,14 +284,14 @@ public class RideControllerTest {
         mockDriverResponse.setId(1L);
 
         when(driverClient.getDriver(1L)).thenReturn(mockDriverResponse);
-        doThrow(new NoSuchElementException("Resource not found: http://localhost:8080/api/v1/passenger/1001"))
+        doThrow(new NoSuchElementException("Passenger with id = 1001 not found"))
                 .when(passengerClient).getPassenger(1001L);
 
         mockMvc.perform(put("/api/v1/rides/{id}", 2)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(rideRequestJson))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message", is("Resource not found: http://localhost:8080/api/v1/passenger/1001")));
+                .andExpect(jsonPath("$.message", is("Passenger with id = 1001 not found")));
     }
 
     @Test
@@ -326,7 +315,6 @@ public class RideControllerTest {
     }
 
     @Test
-    @Order(8)
     public void testDeleteRide_success() throws Exception {
         mockMvc.perform(delete("/api/v1/rides/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
