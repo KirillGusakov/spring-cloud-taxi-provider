@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1" author="Kirill">
+        <insert tableName="rating">
+            <column name="driver_id" value="1"/>
+            <column name="user_id" value="1"/>
+            <column name="ride_id" value= "1"/>
+            <column name="comment" value="Excellent service!"/>
+            <column name="driver_rating" value="5"/>
+            <column name="passenger_rating" value="4"/>
+        </insert>
+
+        <insert tableName="rating">
+            <column name="driver_id" value="2"/>
+            <column name="user_id" value="2"/>
+            <column name="ride_id" value="1"/>
+            <column name="comment" value="Good, but could improve timing."/>
+            <column name="driver_rating" value="4"/>
+            <column name="passenger_rating" value="3"/>
+        </insert>
+
+        <insert tableName="rating">
+            <column name="driver_id" value="3"/>
+            <column name="user_id" value="1"/>
+            <column name="ride_id" value="3"/>
+            <column name="comment" value="Sooo goooood"/>
+            <column name="driver_rating" value="5"/>
+            <column name="passenger_rating" value="5"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
+

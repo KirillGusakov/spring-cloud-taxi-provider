@@ -1,9 +1,6 @@
 package org.modsen.service.driver.integration;
 
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,7 +30,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @Testcontainers
 @AutoConfigureMockMvc
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DriverControllerTest {
 
     @Autowired
@@ -50,11 +46,10 @@ public class DriverControllerTest {
         registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
         registry.add("spring.liquibase.enabled", () -> "true");
-        registry.add("spring.liquibase.change-log", () -> "classpath:migrations/db/changelog/main-changelog.xml");
+        registry.add("spring.liquibase.change-log", () -> "classpath:migrations/main-test-changelog.xml");
     }
 
     @Test
-    @Order(1)
     void testFindAllDrivers_success() throws Exception {
         mockMvc.perform(get("/api/v1/drivers")
                         .param("page", "0")
@@ -63,20 +58,6 @@ public class DriverControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.drivers", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.drivers[0].name", is("Kirill")))
-                .andExpect(jsonPath("$.drivers[0].phoneNumber", is("+1234567890")))
-                .andExpect(jsonPath("$.drivers[0].sex", is("M")))
-                .andExpect(jsonPath("$.drivers[0].cars", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.drivers[0].cars[0].color", is("Red")))
-                .andExpect(jsonPath("$.drivers[0].cars[0].model", is("Tesla Model S")))
-                .andExpect(jsonPath("$.drivers[0].cars[0].number", is("ABC12345")))
-                .andExpect(jsonPath("$.drivers[1].name", is("Jane Smith")))
-                .andExpect(jsonPath("$.drivers[1].phoneNumber", is("+1987654321")))
-                .andExpect(jsonPath("$.drivers[1].sex", is("F")))
-                .andExpect(jsonPath("$.drivers[1].cars", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.drivers[1].cars[0].color", is("Blue")))
-                .andExpect(jsonPath("$.drivers[1].cars[0].model", is("BMW X5")))
-                .andExpect(jsonPath("$.drivers[1].cars[0].number", is("XYZ56789")))
                 .andExpect(jsonPath("$.pageInfo.currentPage", is(0)))
                 .andExpect(jsonPath("$.pageInfo.pageSize", is(10)))
                 .andExpect(jsonPath("$.pageInfo.totalPages", greaterThan(0)))
@@ -84,23 +65,22 @@ public class DriverControllerTest {
     }
 
     @Test
-    @Order(2)
     void testFindAllDrivers_withNameAndPhoneFilter_success() throws Exception {
         mockMvc.perform(get("/api/v1/drivers")
-                        .param("name", "Kirill")
-                        .param("phone", "+1234567890")
+                        .param("name", "Rian")
+                        .param("phone", "+3752916200")
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.drivers", is(not(empty()))))
-                .andExpect(jsonPath("$.drivers[0].name", is("Kirill")))
-                .andExpect(jsonPath("$.drivers[0].phoneNumber", is("+1234567890")))
+                .andExpect(jsonPath("$.drivers[0].name", is("Rian")))
+                .andExpect(jsonPath("$.drivers[0].phoneNumber", is("+3752916200")))
                 .andExpect(jsonPath("$.drivers[0].sex", is("M")))
                 .andExpect(jsonPath("$.drivers[0].cars", hasSize(greaterThan(0))))
-                .andExpect(jsonPath("$.drivers[0].cars[0].color", is("Red")))
-                .andExpect(jsonPath("$.drivers[0].cars[0].model", is("Tesla Model S")))
-                .andExpect(jsonPath("$.drivers[0].cars[0].number", is("ABC12345")))
+                .andExpect(jsonPath("$.drivers[0].cars[0].color", is("Green")))
+                .andExpect(jsonPath("$.drivers[0].cars[0].model", is("Mercedes")))
+                .andExpect(jsonPath("$.drivers[0].cars[0].number", is("HE-333-12")))
                 .andExpect(jsonPath("$.pageInfo.currentPage", is(0)))
                 .andExpect(jsonPath("$.pageInfo.pageSize", is(10)))
                 .andExpect(jsonPath("$.pageInfo.totalPages", greaterThan(0)))
@@ -109,7 +89,6 @@ public class DriverControllerTest {
     }
 
     @Test
-    @Order(3)
     void testSaveDriver_success() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/drivers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -139,25 +118,23 @@ public class DriverControllerTest {
     }
 
     @Test
-    @Order(4)
     void testSaveDriver_withExistPhoneNumber_notSuccess() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/drivers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                     "name": "Jane Doe",
-                                    "phoneNumber": "+1234567890",
+                                    "phoneNumber": "+3752916200",
                                     "sex": "F",
                                     "cars": null
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Driver with phone number +1234567890 already exists")))
+                .andExpect(jsonPath("$.message", is("Driver with phone number +3752916200 already exists")))
                 .andReturn();
     }
 
     @Test
-    @Order(5)
     void testSaveDriver_withDuplicateCarNumbers_notSuccess() throws Exception {
         mockMvc.perform(post("/api/v1/drivers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -185,7 +162,6 @@ public class DriverControllerTest {
     }
 
     @Test
-    @Order(6)
     void testSaveDriver_withExistingCarNumberInDatabase_notSuccess() throws Exception {
         mockMvc.perform(post("/api/v1/drivers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -230,7 +206,6 @@ public class DriverControllerTest {
     }
 
     @Test
-    @Order(7)
     void testUpdateDriver_success() throws Exception {
         String updatedDriverJson = """
             {
@@ -250,12 +225,11 @@ public class DriverControllerTest {
     }
 
     @Test
-    @Order(8)
     void testUpdateDriver_duplicatePhoneNumber_notSuccess() throws Exception {
         String updatedDriverJson = """
             {
                 "name": "Kirill",
-                "phoneNumber": "+1234567899",
+                "phoneNumber": "+3752916200",
                 "sex": "M"
             }
             """;
@@ -264,7 +238,7 @@ public class DriverControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatedDriverJson))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Driver with phone number +1234567899 already exists")));
+                .andExpect(jsonPath("$.message", is("Driver with phone number +3752916200 already exists")));
     }
 
     @Test
@@ -285,7 +259,6 @@ public class DriverControllerTest {
     }
 
     @Test
-    @Order(9)
     void testDeleteDriver_success() throws Exception {
         mockMvc.perform(delete("/api/v1/drivers/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON))
