@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -31,13 +32,15 @@ public class DriverServiceImpl implements DriverService {
     public DriverResponseDto saveDriver(DriverRequestDto driver) {
         Set<String> carNumbers = new HashSet<>();
 
-        if (driver.getCars() != null) {
-            driver.getCars().forEach(car -> {
-                if (!carNumbers.add(car.getNumber())) {
-                    throw new DuplicateResourceException("Duplicate car number found: " + car.getNumber());
-                }
-            });
+        if (driver.getCars() == null) {
+            driver.setCars(new ArrayList<>());
         }
+
+        driver.getCars().forEach(car -> {
+            if (!carNumbers.add(car.getNumber())) {
+                throw new DuplicateResourceException("Duplicate car number found: " + car.getNumber());
+            }
+        });
 
         boolean isExists = driverRepository.existsByPhoneNumberAndIdNot(driver.getPhoneNumber(), 0L);
         if (isExists) {
