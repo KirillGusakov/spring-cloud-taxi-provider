@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="4" author="Kirill">
+        <insert tableName="driver">
+            <column name="name" value="Kirill"/>
+            <column name="phone_number" value="+1234567890"/>
+            <column name="sex" value="M"/>
+        </insert>
+
+        <insert tableName="driver">
+            <column name="name" value="Jane Smith"/>
+            <column name="phone_number" value="+1987654321"/>
+            <column name="sex" value="F"/>
+        </insert>
+
+        <insert tableName="driver">
+            <column name="name" value="Alina"/>
+            <column name="phone_number" value="+37529903000"/>
+            <column name="sex" value="F"/>
+        </insert>
+
+        <insert tableName="driver">
+        <column name="name" value="Rian"/>
+        <column name="phone_number" value="+3752916200"/>
+        <column name="sex" value="M"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="5" author="Kirill">
+        <insert tableName="car">
+            <column name="color" value="Red"/>
+            <column name="model" value="Tesla Model S"/>
+            <column name="number" value="ABC12345"/>
+            <column name="driver_id" value="1"/>
+        </insert>
+
+        <insert tableName="car">
+            <column name="color" value="Blue"/>
+            <column name="model" value="BMW X5"/>
+            <column name="number" value="XYZ56789"/>
+            <column name="driver_id" value="2"/>
+        </insert>
+
+        <insert tableName="car">
+            <column name="color" value="Green"/>
+            <column name="model" value="BMW 330 i"/>
+            <column name="number" value="KK-5555-5"/>
+            <column name="driver_id" value="2"/>
+        </insert>
+
+        <insert tableName="car">
+            <column name="color" value="Green"/>
+            <column name="model" value="Mercedes"/>
+            <column name="number" value="HE-333-12"/>
+            <column name="driver_id" value="4"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
