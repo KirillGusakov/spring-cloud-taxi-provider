@@ -1,10 +1,17 @@
 package org.modsen.service.driver.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modsen.service.driver.dto.request.CarRequestDto;
 import org.modsen.service.driver.dto.response.CarResponseDto;
 import org.modsen.service.driver.dto.response.PageResponse;
+import org.modsen.service.driver.exception.ErrorMessage;
+import org.modsen.service.driver.exception.ValidationErrorResponse;
 import org.modsen.service.driver.service.CarService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 
+@Tag(name = "Basic methods for interacting with car api")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/cars")
@@ -31,12 +39,22 @@ public class CarController {
     private final CarService carService;
 
     @PostMapping
+    @Operation(summary = "Save car", description = "Store car information in database")
+    @ApiResponse(responseCode = "201", description = "Car saved", content = @Content(schema = @Schema(implementation = CarResponseDto.class)))
+    @ApiResponse(responseCode = "400", description = "Validation error or duplicate car number",
+            content = @Content(schema = @Schema(implementation = ValidationErrorResponse.class)))
     public ResponseEntity<CarResponseDto> saveCar(@RequestBody @Valid CarRequestDto carRequestDto) {
         CarResponseDto save = carService.save(carRequestDto);
         return new ResponseEntity<>(save, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update car", description = "Update car details by ID")
+    @ApiResponse(responseCode = "200", description = "Car updated", content = @Content(schema = @Schema(implementation = CarResponseDto.class)))
+    @ApiResponse(responseCode = "400", description = "Validation error or duplicate car number",
+            content = @Content(schema = @Schema(implementation = ValidationErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Car or driver not found",
+            content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
     public ResponseEntity<CarResponseDto> updateCar(@PathVariable("id") Long id,
                                                     @RequestBody @Valid CarRequestDto carRequestDto) {
         CarResponseDto updatedCar = carService.update(id, carRequestDto);
@@ -44,12 +62,18 @@ public class CarController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete car", description = "Delete car by ID")
+    @ApiResponse(responseCode = "204", description = "Car deleted")
+    @ApiResponse(responseCode = "404", description = "Car with id = not found",
+            content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
     public ResponseEntity<Void> deleteCar(@PathVariable Long id) {
         carService.deleteCar(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping
+    @Operation(summary = "Get cars", description = "Retrieve all cars with pagination and filters")
+    @ApiResponse(responseCode = "200", description = "Cars retrieved", content = @Content(schema = @Schema(implementation = CarResponseDto.class)))
     public ResponseEntity<Map<String, Object>> getAllCars(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size,
@@ -74,6 +98,10 @@ public class CarController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Find car by ID", description = "Retrieve car by ID")
+    @ApiResponse(responseCode = "200", description = "Car found", content = @Content(schema = @Schema(implementation = CarResponseDto.class)))
+    @ApiResponse(responseCode = "404", description = "Car with id = not found",
+            content = @Content(schema = @Schema(implementation = ErrorMessage.class)))
     public ResponseEntity<CarResponseDto> getCarById(@PathVariable("id") Long id) {
         CarResponseDto car = carService.findById(id);
         return new ResponseEntity<>(car, HttpStatus.OK);
