@@ -32,6 +32,7 @@
         <postgre.sql.version>42.7.4</postgre.sql.version>
         <map.struct>1.6.0</map.struct>
         <spring-cloud.version>2023.0.3</spring-cloud.version>
+        <swagger.version>2.2.0</swagger.version>
     </properties>
 
     <dependencies>
@@ -138,6 +139,17 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${swagger.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
     </dependencies>
 
