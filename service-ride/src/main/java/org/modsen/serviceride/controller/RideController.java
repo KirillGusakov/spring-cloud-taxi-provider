@@ -2,6 +2,7 @@ package org.modsen.serviceride.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modsen.serviceride.api.RideApi;
 import org.modsen.serviceride.dto.filter.RideFilterDto;
 import org.modsen.serviceride.dto.request.RideRequest;
 import org.modsen.serviceride.dto.response.PageResponse;
@@ -29,7 +30,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/rides")
-public class RideController {
+public class RideController implements RideApi {
 
     private final RideService rideService;
 

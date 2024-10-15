@@ -6,9 +6,8 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-@FeignClient(name = "driver-service", url = "${request.driver}",
-        configuration = FeignClientConfig.class)
+@FeignClient(name = "service-driver", configuration = FeignClientConfig.class)
 public interface DriverClient {
-    @GetMapping("/{id}")
+    @GetMapping("/api/v1/drivers/{id}")
     DriverResponse getDriver(@PathVariable("id") Long id);
 }

@@ -2,6 +2,7 @@ package org.modsen.servicepassenger.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modsen.servicepassenger.api.PassengerApi;
 import org.modsen.servicepassenger.dto.request.PassengerRequestDto;
 import org.modsen.servicepassenger.dto.response.PageResponse;
 import org.modsen.servicepassenger.dto.response.PassengerResponseDto;
@@ -26,7 +27,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("api/v1/passengers")
 @RequiredArgsConstructor
-public class PassengerController {
+public class PassengerController implements PassengerApi {
 
     private final PassengerService passengerService;
 

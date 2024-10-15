@@ -2,6 +2,7 @@ package org.modsen.service.driver.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modsen.service.driver.api.CarApi;
 import org.modsen.service.driver.dto.request.CarRequestDto;
 import org.modsen.service.driver.dto.response.CarResponseDto;
 import org.modsen.service.driver.dto.response.PageResponse;
@@ -26,7 +27,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("api/v1/cars")
-public class CarController {
+public class CarController implements CarApi {
 
     private final CarService carService;
 
