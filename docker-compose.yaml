@@ -1,21 +1,4 @@
-
 services:
-  driver:
-    build: service-driver
-    env_file:
-      - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-    ports:
-      - "8078:8080"
-    networks:
-      - taxi-network
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/driver_db
-      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
 
   postgres:
     container_name: postgres
@@ -25,7 +8,6 @@ services:
     environment:
       POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME}
       POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./pgdata:/var/lib/postgresql/data
@@ -40,10 +22,63 @@ services:
       timeout: 5s
       retries: 5
 
+  eureka:
+    build: spring-eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - taxi-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8761/eureka/apps || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    build: api-gateway
+    depends_on:
+      eureka:
+        condition: service_started
+      driver:
+        condition: service_started
+      passenger:
+        condition: service_started
+      rating:
+        condition: service_started
+      ride:
+        condition: service_started
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    ports:
+      - "8083:8080"
+    networks:
+      - taxi-network
+
+  driver:
+    build: service-driver
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    ports:
+      - "8078:8080"
+    networks:
+      - taxi-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/driver_db
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+
   passenger:
     build: service-passenger
     depends_on:
       postgres:
+        condition: service_healthy
+      eureka:
         condition: service_healthy
     env_file:
       - .env
@@ -64,6 +99,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      eureka:
+        condition: service_healthy
       kafka:
         condition: service_started
     ports:
@@ -83,6 +120,8 @@ services:
       - .env
     depends_on:
       postgres:
+        condition: service_healthy
+      eureka:
         condition: service_healthy
       kafka:
         condition: service_started
@@ -119,7 +158,3 @@ services:
 networks:
   taxi-network:
     driver: bridge
-
-volumes:
-  postgres:
-    driver: local
