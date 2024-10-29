@@ -35,7 +35,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class RideServiceImplTest {
+public class RideServiceUnitTest {
 
     @Mock
     private RideRepository rideRepository;
@@ -107,27 +107,33 @@ public class RideServiceImplTest {
     }
 
     @Test
-    void findById_success() {
+    void givenRideExists_whenFindById_thenReturnRideResponse() {
+        // Given
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
         when(rideMapper.toRideResponse(ride)).thenReturn(rideResponse);
 
+        // When
         RideResponse foundRide = rideService.findById(1L);
 
+        // Then
         assertNotNull(foundRide);
         assertEquals(rideResponse, foundRide);
         verify(rideRepository, times(1)).findById(1L);
     }
 
     @Test
-    void findById_notFound() {
+    void givenRideDoesNotExist_whenFindById_thenThrowNoSuchElementException() {
+        // Given
         when(rideRepository.findById(1L)).thenReturn(Optional.empty());
 
+        // When & Then
         assertThrows(NoSuchElementException.class, () -> rideService.findById(1L));
         verify(rideRepository, times(1)).findById(1L);
     }
 
     @Test
-    void findAll_success() {
+    void givenRidesExist_whenFindAll_thenReturnRideResponsePage() {
+        // Given
         Pageable pageable = PageRequest.of(0, 10);
         RideFilterDto filterDto = new RideFilterDto();
         Page<Ride> rides = new PageImpl<>(Collections.singletonList(ride));
@@ -135,8 +141,10 @@ public class RideServiceImplTest {
         when(rideRepository.findAll(any(Example.class), eq(pageable))).thenReturn(rides);
         when(rideMapper.toRideResponse(ride)).thenReturn(rideResponse);
 
+        // When
         Page<RideResponse> result = rideService.findAll(pageable, filterDto);
 
+        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         assertEquals(rideResponse, result.getContent().get(0));
@@ -144,15 +152,18 @@ public class RideServiceImplTest {
     }
 
     @Test
-    void saveRide_success() {
+    void givenRideRequest_whenSaveRide_thenReturnSavedRideResponse() {
+        // Given
         when(driverClient.getDriver(rideRequest.getDriverId())).thenReturn(driverResponse);
         when(passengerClient.getPassenger(rideRequest.getPassengerId())).thenReturn(passengerResponse);
         when(rideMapper.toRide(rideRequest)).thenReturn(ride);
         when(rideRepository.save(any(Ride.class))).thenReturn(ride);
         when(rideMapper.toRideResponse(ride)).thenReturn(rideResponse);
 
+        // When
         RideResponse savedRide = rideService.save(rideRequest);
 
+        // Then
         assertNotNull(savedRide);
         assertEquals(rideResponse, savedRide);
         verify(rideRepository, times(1)).save(ride);
@@ -160,37 +171,46 @@ public class RideServiceImplTest {
     }
 
     @Test
-    void updateRide_success() {
+    void givenRideExists_whenUpdateRide_thenReturnUpdatedRideResponse() {
+        // Given
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
         when(driverClient.getDriver(rideRequest.getDriverId())).thenReturn(driverResponse);
         when(passengerClient.getPassenger(rideRequest.getPassengerId())).thenReturn(passengerResponse);
         when(rideRepository.save(ride)).thenReturn(ride);
         when(rideMapper.toRideResponse(ride)).thenReturn(rideResponse);
 
+        // When
         RideResponse updatedRide = rideService.update(1L, rideRequest);
 
+        // Then
         assertNotNull(updatedRide);
         assertEquals(rideResponse, updatedRide);
         verify(rideRepository, times(1)).save(ride);
     }
 
     @Test
-    void deleteRide_success() {
+    void givenRideExists_whenDeleteRide_thenRideShouldBeDeleted() {
+        // Given
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
 
+        // When
         rideService.delete(1L);
 
+        // Then
         verify(rideRepository, times(1)).deleteById(1L);
     }
 
     @Test
-    void updateRideStatus_success() {
+    void givenRideExists_whenUpdateRideStatus_thenReturnUpdatedRideResponse() {
+        // Given
         when(rideRepository.findById(1L)).thenReturn(Optional.of(ride));
         when(rideRepository.save(ride)).thenReturn(ride);
         when(rideMapper.toRideResponse(ride)).thenReturn(rideResponse);
 
+        // When
         RideResponse updatedRide = rideService.updateRideStatus(1L, "COMPLETED");
 
+        // Then
         assertNotNull(updatedRide);
         assertEquals(RideStatus.COMPLETED.name(), ride.getStatus().name());
         verify(rideRepository, times(1)).save(ride);

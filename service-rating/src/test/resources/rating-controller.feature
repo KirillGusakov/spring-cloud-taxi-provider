@@ -1,4 +1,4 @@
-Feature: Rating Controller
+Feature: Rating component testing
 
   Scenario: Retrieve all ratings successfully
     When I request all ratings

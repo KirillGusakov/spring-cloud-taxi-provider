@@ -2,6 +2,7 @@ package org.modsen.service.driver.contract;
 
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.modsen.service.driver.controller.DriverController;
 import org.modsen.service.driver.exception.ExceptionHandlerControllerAdvice;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMessageVerifier
 @Testcontainers
+@DisplayName("Driver contract testing")
 public class BaseTestClass {
 
     @Autowired

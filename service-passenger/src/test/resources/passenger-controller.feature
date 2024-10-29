@@ -1,4 +1,4 @@
-Feature: Passenger API
+Feature: Passenger component testing
 
   Scenario: Find all passengers successfully
     When I request all passengers with pagination

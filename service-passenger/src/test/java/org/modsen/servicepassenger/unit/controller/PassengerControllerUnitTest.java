@@ -1,6 +1,7 @@
 package org.modsen.servicepassenger.unit.controller;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.modsen.servicepassenger.controller.PassengerController;
 import org.modsen.servicepassenger.dto.request.PassengerRequestDto;
@@ -31,7 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PassengerController.class)
-public class PassengerControllerTest {
+@DisplayName("Passenger controller unit tests")
+public class PassengerControllerUnitTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -45,6 +47,7 @@ public class PassengerControllerTest {
 
     @BeforeEach
     void setUp() {
+        // Given
         passengerResponseDto = new PassengerResponseDto();
         passengerResponseDto.setId(1L);
         passengerResponseDto.setEmail("kirill@example.com");
@@ -62,11 +65,13 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void findAllPassengers_success() throws Exception {
+    void whenFindAllPassengers_thenReturnPassengersList() throws Exception {
+        // Given
         when(passengerService.findAll(any(PageRequest.class), eq("kirill@example.com"),
                 eq("Kirill"), eq(null), eq(false)))
                 .thenReturn(passengerPage);
 
+        // When
         mockMvc.perform(get("/api/v1/passengers")
                         .param("email", "kirill@example.com")
                         .param("name", "Kirill")
@@ -75,6 +80,7 @@ public class PassengerControllerTest {
                         .param("size", "10")
                         .param("sort", "id")
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.passengers", hasSize(1)))
                 .andExpect(jsonPath("$.passengers[0].email", is("kirill@example.com")))
@@ -86,11 +92,14 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void findById_success() throws Exception {
+    void whenFindPassengerById_thenReturnPassenger() throws Exception {
+        // Given
         when(passengerService.findById(1L)).thenReturn(passengerResponseDto);
 
+        // When
         mockMvc.perform(get("/api/v1/passengers/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.email", is("kirill@example.com")));
@@ -99,9 +108,11 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void createPassenger_success() throws Exception {
+    void whenCreatePassenger_thenReturnCreatedPassenger() throws Exception {
+        // Given
         when(passengerService.save(any(PassengerRequestDto.class))).thenReturn(passengerResponseDto);
 
+        // When
         mockMvc.perform(post("/api/v1/passengers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -112,6 +123,7 @@ public class PassengerControllerTest {
                                     "phoneNumber": "+123456789"
                                 }
                                 """))
+                // Then
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email", is("kirill@example.com")));
 
@@ -119,9 +131,11 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void updatePassenger_success() throws Exception {
+    void whenUpdatePassenger_thenReturnUpdatedPassenger() throws Exception {
+        // Given
         when(passengerService.update(eq(1L), any(PassengerRequestDto.class))).thenReturn(passengerResponseDto);
 
+        // When
         mockMvc.perform(put("/api/v1/passengers/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -132,6 +146,7 @@ public class PassengerControllerTest {
                                     "phoneNumber": "+123456789"
                                 }
                                 """))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email", is("kirill@example.com")));
 
@@ -139,11 +154,14 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void deletePassenger_success() throws Exception {
+    void whenDeletePassenger_thenReturnNoContent() throws Exception {
+        // Given
         doNothing().when(passengerService).delete(1L);
 
+        // When
         mockMvc.perform(delete("/api/v1/passengers/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isNoContent());
 
         verify(passengerService, times(1)).delete(1L);

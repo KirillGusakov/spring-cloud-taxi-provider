@@ -1,6 +1,7 @@
 package org.modsen.servicepassenger.unit.service.impl;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,7 +32,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class PassengerServiceImplTest {
+@DisplayName("Passenger service unit tests")
+public class PassengerServiceUnitTest {
 
     @Mock
     private PassengerRepository passengerRepository;
@@ -41,11 +43,10 @@ public class PassengerServiceImplTest {
 
     @InjectMocks
     private PassengerServiceImpl passengerService;
+
     private Passenger passenger;
     private PassengerResponseDto passengerResponseDto;
 
-
-    @Test
     @BeforeEach
     void setUp() {
         passenger = Passenger.builder()
@@ -63,25 +64,32 @@ public class PassengerServiceImplTest {
     }
 
     @Test
-    void findById_success() {
+    void givenExistingPassengerId_whenFindById_thenReturnPassenger() {
+        // Given
         when(passengerRepository.findByIdAndIsDeletedFalse(1L)).thenReturn(Optional.of(passenger));
         when(passengerMapper.toPassengerResponseDto(passenger)).thenReturn(passengerResponseDto);
 
+        // When
         PassengerResponseDto foundPassenger = passengerService.findById(1L);
 
+        // Then
         assertNotNull(foundPassenger);
         assertEquals(passengerResponseDto, foundPassenger);
         verify(passengerRepository, times(1)).findByIdAndIsDeletedFalse(1L);
     }
 
     @Test
-    void findById_notFound() {
+    void givenNonExistingPassengerId_whenFindById_thenThrowException() {
+        // Given
         when(passengerRepository.findByIdAndIsDeletedFalse(1L)).thenReturn(Optional.empty());
+
+        // When & Then
         assertThrows(NoSuchElementException.class, () -> passengerService.findById(1L));
     }
 
     @Test
-    void findAll_success() {
+    void givenPassengerSearchCriteria_whenFindAll_thenReturnPassengerPage() {
+        // Given
         Pageable pageable = PageRequest.of(0, 10);
         Passenger passengerExample = Passenger.builder().email("kirill.kirill@example.com")
                 .firstName("Kirill")
@@ -91,16 +99,19 @@ public class PassengerServiceImplTest {
         when(passengerRepository.findAll(any(Example.class), eq(pageable))).thenReturn(passengers);
         when(passengerMapper.toPassengerResponseDto(passenger)).thenReturn(passengerResponseDto);
 
+        // When
         Page<PassengerResponseDto> result =
                 passengerService.findAll(pageable, "kirill.kirill@example.com", "Kirill", null, false);
 
+        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         verify(passengerRepository, times(1)).findAll(any(Example.class), eq(pageable));
     }
 
     @Test
-    void save_success() {
+    void givenPassengerRequestDto_whenSave_thenReturnSavedPassenger() {
+        // Given
         PassengerRequestDto passengerRequestDto = new PassengerRequestDto("Kirill", "Kirill",
                 "kirill.kirill@example.com", "+37544596912");
         when(passengerRepository.existsByEmailAndIdNot("kirill.kirill@example.com", 0L)).thenReturn(false);
@@ -109,15 +120,18 @@ public class PassengerServiceImplTest {
         when(passengerRepository.save(passenger)).thenReturn(passenger);
         when(passengerMapper.toPassengerResponseDto(passenger)).thenReturn(passengerResponseDto);
 
+        // When
         PassengerResponseDto result = passengerService.save(passengerRequestDto);
 
+        // Then
         assertNotNull(result);
         assertEquals(passengerResponseDto, result);
         verify(passengerRepository, times(1)).save(passenger);
     }
 
     @Test
-    void update_success() {
+    void givenPassengerRequestDto_whenUpdate_thenReturnUpdatedPassenger() {
+        // Given
         PassengerRequestDto passengerRequestDto = new PassengerRequestDto
                 ("Kirill", "Kirill", "kirill.kirill@example.com", "+37544596912");
 
@@ -127,21 +141,25 @@ public class PassengerServiceImplTest {
         when(passengerRepository.save(passenger)).thenReturn(passenger);
         when(passengerMapper.toPassengerResponseDto(passenger)).thenReturn(passengerResponseDto);
 
+        // When
         PassengerResponseDto result = passengerService.update(1L, passengerRequestDto);
 
+        // Then
         assertNotNull(result);
         assertEquals(passengerResponseDto, result);
         verify(passengerRepository, times(1)).save(passenger);
     }
 
     @Test
-    void delete_success() {
+    void givenExistingPassengerId_whenDelete_thenMarkAsDeleted() {
+        // Given
         when(passengerRepository.findByIdAndIsDeletedFalse(1L)).thenReturn(Optional.of(passenger));
 
+        // When
         passengerService.delete(1L);
 
+        // Then
         verify(passengerRepository, times(1)).save(passenger);
         assertTrue(passenger.getIsDeleted());
     }
-
 }

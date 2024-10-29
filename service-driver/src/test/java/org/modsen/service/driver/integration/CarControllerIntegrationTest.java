@@ -1,5 +1,6 @@
 package org.modsen.service.driver.integration;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -29,7 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @Testcontainers
 @AutoConfigureMockMvc
-public class CarControllerTest {
+@DisplayName("Car integration tests")
+public class CarControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -49,7 +51,7 @@ public class CarControllerTest {
     }
 
     @Test
-    void testFindAllCars_success() throws Exception {
+    void givenCarsExist_whenFindAllCars_thenReturnAllCars() throws Exception {
         mockMvc.perform(get("/api/v1/cars")
                         .param("page", "0")
                         .param("size", "10")
@@ -64,7 +66,7 @@ public class CarControllerTest {
     }
 
     @Test
-    void testFindAllCars_withModelAndNumberFilter_success() throws Exception {
+    void givenModelAndNumberFilter_whenFindAllCars_thenReturnFilteredCars() throws Exception {
         mockMvc.perform(get("/api/v1/cars")
                         .param("model", "Mercedes")
                         .param("number", "HE-333-12")
@@ -83,7 +85,7 @@ public class CarControllerTest {
     }
 
     @Test
-    void testSaveCar_success() throws Exception {
+    void givenValidCarRequest_whenSaveCar_thenCarIsCreated() throws Exception {
         String carRequest = createCarRequest("Red", "Tesla Model S", "XX-7777-7", 1L);
 
         mockMvc.perform(post("/api/v1/cars")
@@ -96,18 +98,18 @@ public class CarControllerTest {
     }
 
     @Test
-    void testSaveCar_withExistNumber_notSuccess() throws Exception {
-        String carRequest = createCarRequest("Red", "Tesla Model S", "ABC12345", 1L);
+    void givenExistingCarNumber_whenSaveCar_thenReturnBadRequest() throws Exception {
+        String carRequest = createCarRequest("Red", "Tesla Model S", "HE-333-12", 1L);
 
         mockMvc.perform(post("/api/v1/cars")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(carRequest))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Car with number ABC12345 already exists")));
+                .andExpect(jsonPath("$.message", is("Car with number HE-333-12 already exists")));
     }
 
     @Test
-    void testSaveCar_withInvalidDriverId_notSuccess() throws Exception {
+    void givenInvalidDriverId_whenSaveCar_thenReturnNotFound() throws Exception {
         String carRequest = createCarRequest("Red", "Tesla Model S", "ABC12545", 1001L);
 
         mockMvc.perform(post("/api/v1/cars")
@@ -118,7 +120,7 @@ public class CarControllerTest {
     }
 
     @Test
-    void testCreateCar_withInvalidColor_notSuccess() throws Exception {
+    void givenInvalidColor_whenSaveCar_thenReturnBadRequest() throws Exception {
         String carRequest = createCarRequest(" ", "Tesla Model X", "ABC23456", 1L);
 
         mockMvc.perform(post("/api/v1/cars")
@@ -135,7 +137,7 @@ public class CarControllerTest {
     }
 
     @Test
-    void testFindById_success() throws Exception {
+    void givenExistingCarId_whenFindById_thenReturnCar() throws Exception {
         mockMvc.perform(get("/api/v1/cars/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -146,7 +148,7 @@ public class CarControllerTest {
     }
 
     @Test
-    void testFindById_invalidCarId_notSuccess() throws Exception {
+    void givenNonExistingCarId_whenFindById_thenReturnNotFound() throws Exception {
         mockMvc.perform(get("/api/v1/cars/{id}", 1001L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -154,7 +156,7 @@ public class CarControllerTest {
     }
 
     @Test
-    void updateCar_success() throws Exception {
+    void givenValidUpdateRequest_whenUpdateCar_thenReturnUpdatedCar() throws Exception {
         String carRequest = createCarRequest("Blue", "Tesla Model X", "ABC23456", 1L);
 
         mockMvc.perform(put("/api/v1/cars/{id}", 3L)
@@ -167,7 +169,7 @@ public class CarControllerTest {
     }
 
     @Test
-    void updateCar_invalidColor_notSuccess() throws Exception {
+    void givenInvalidColor_whenUpdateCar_thenReturnBadRequest() throws Exception {
         String carRequest = createCarRequest(" ", "Tesla Model X", "ABC23456", 1L);
 
         mockMvc.perform(put("/api/v1/cars/{id}", 1L)
@@ -184,7 +186,7 @@ public class CarControllerTest {
     }
 
     @Test
-    void updateCar_withInvalidDriverId_notSuccess() throws Exception {
+    void givenInvalidDriverId_whenUpdateCar_thenReturnNotFound() throws Exception {
         String carRequest = createCarRequest("BLUUUE", "Tesla Model X", "ABC23456", 1001L);
 
         mockMvc.perform(put("/api/v1/cars/{id}", 1L)
@@ -195,28 +197,20 @@ public class CarControllerTest {
     }
 
     @Test
-    void deleteCar_success() throws Exception {
-        mockMvc.perform(delete("/api/v1/cars/{id}", 2L)
-                        .contentType(MediaType.APPLICATION_JSON))
+    void givenExistingCarId_whenDeleteCar_thenReturnNoContent() throws Exception {
+        mockMvc.perform(delete("/api/v1/cars/{id}", 1L))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    void deleteCar_withInvalidCarId_notSuccess() throws Exception {
-        mockMvc.perform(delete("/api/v1/cars/{id}", 1001L)
-                        .contentType(MediaType.APPLICATION_JSON))
+    void givenNonExistingCarId_whenDeleteCar_thenReturnNotFound() throws Exception {
+        mockMvc.perform(delete("/api/v1/cars/{id}", 1001L))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Car with id = 1001 not found")));
     }
 
     private String createCarRequest(String color, String model, String number, Long driverId) {
-        return """
-            {
-                "color": "%s",
-                "model": "%s",
-                "number": "%s",
-                "driverId": %d
-            }
-            """.formatted(color, model, number, driverId);
+        return String.format("{\"color\":\"%s\",\"model\":\"%s\",\"number\":\"%s\",\"driverId\":%d}",
+                color, model, number, driverId);
     }
 }

@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CarController.class)
-public class CarControllerTest {
+public class CarControllerUnitTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -60,9 +60,11 @@ public class CarControllerTest {
     }
 
     @Test
-    void saveCar_success() throws Exception {
+    void givenCarDetails_whenSaveCar_thenStatusCreatedAndReturnCar() throws Exception {
+        // Given
         when(carService.save(any(CarRequestDto.class))).thenReturn(carResponseDto);
 
+        // When & Then
         mockMvc.perform(post("/api/v1/cars")
                         .content("""
                                   {
@@ -79,18 +81,20 @@ public class CarControllerTest {
     }
 
     @Test
-    void updateCar_success() throws Exception {
+    void givenCarDetails_whenUpdateCar_thenStatusOkAndReturnUpdatedCar() throws Exception {
+        // Given
         when(carService.update(eq(1L), any(CarRequestDto.class))).thenReturn(carResponseDto);
 
+        // When & Then
         mockMvc.perform(put("/api/v1/cars/1")
-                .content("""
+                        .content("""
                           {
                           "color": "blue",
                           "model": "BMW",
                           "number": "7777-AA-7"
                           }
                         """)
-                .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.number", is("7777-AA-7")))
                 .andExpect(status().isOk());
 
@@ -98,9 +102,11 @@ public class CarControllerTest {
     }
 
     @Test
-    void deleteCar_success() throws Exception {
+    void givenCarId_whenDeleteCar_thenStatusNoContent() throws Exception {
+        // Given
         doNothing().when(carService).deleteCar(eq(1L));
 
+        // When & Then
         mockMvc.perform(delete("/api/v1/cars/1"))
                 .andExpect(status().isNoContent());
 
@@ -108,9 +114,11 @@ public class CarControllerTest {
     }
 
     @Test
-    void findById_success() throws Exception {
+    void givenCarId_whenFindById_thenStatusOkAndReturnCar() throws Exception {
+        // Given
         when(carService.findById(eq(1L))).thenReturn(carResponseDto);
 
+        // When & Then
         mockMvc.perform(get("/api/v1/cars/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.number", is("7777-AA-7")))
@@ -120,13 +128,15 @@ public class CarControllerTest {
     }
 
     @Test
-    void findAllCars_success() throws Exception {
+    void givenPageRequest_whenFindAllCars_thenStatusOkAndReturnCarsList() throws Exception {
+        // Given
         List<CarResponseDto> carList = Arrays.asList(carResponseDto);
         carPage = new PageImpl<>(carList, PageRequest.of(0, 10), carList.size());
 
         when(carService.findAll(any(PageRequest.class), any(String.class), any(String.class)))
                 .thenReturn(carPage);
 
+        // When & Then
         mockMvc.perform(get("/api/v1/cars")
                         .param("page", "0")
                         .param("size", "10")

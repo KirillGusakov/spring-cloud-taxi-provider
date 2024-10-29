@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = "rating-topic")
 @SpringBootTest(properties = "spring.kafka.producer.bootstrap-servers=${spring.embedded.kafka.brokers}")
-public class RatingControllerTest {
+public class RatingControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -57,7 +57,7 @@ public class RatingControllerTest {
     }
 
     @Test
-    public void testFindAll_success() throws Exception {
+    public void givenNoFilters_whenFindAll_thenReturnsRatings() throws Exception {
         mockMvc.perform(get("/api/v1/ratings")
                         .param("page", "0")
                         .param("size", "10")
@@ -70,7 +70,7 @@ public class RatingControllerTest {
     }
 
     @Test
-    void testFindAll_withFilters_success() throws Exception {
+    void givenFilters_whenFindAll_thenReturnsFilteredRatings() throws Exception {
         mockMvc.perform(get("/api/v1/ratings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .param("page", "0")
@@ -91,7 +91,7 @@ public class RatingControllerTest {
     }
 
     @Test
-    void testFindById_success() throws Exception {
+    void givenValidId_whenFindById_thenReturnsRating() throws Exception {
         mockMvc.perform(get("/api/v1/ratings/{id}", 3L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -104,7 +104,7 @@ public class RatingControllerTest {
     }
 
     @Test
-    void testFindById_withInvalidRatingId_notSuccess() throws Exception {
+    void givenInvalidId_whenFindById_thenReturnsNotFound() throws Exception {
         mockMvc.perform(get("/api/v1/ratings/{id}", 1001L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -113,14 +113,14 @@ public class RatingControllerTest {
 
     @Test
     @Transactional
-    void testConsumeRating_success() throws Exception {
+    void givenRatingMessage_whenConsumeRating_thenSavesRating() throws Exception {
         RatingMessage ratingMessage = new RatingMessage();
         ratingMessage.setDriverId(5L);
         ratingMessage.setPassengerId(5L);
         ratingMessage.setRideId(5L);
 
         kafkaTemplate.send("rating-topic", ratingMessage);
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
         Rating savedRating = ratingRepository.findByDriverIdAndUserIdAndRideId(
                 ratingMessage.getDriverId(),
@@ -135,7 +135,7 @@ public class RatingControllerTest {
     }
 
     @Test
-    void updateRating_success() throws Exception {
+    void givenUpdatedRating_whenUpdateRating_thenReturnsUpdatedRating() throws Exception {
         mockMvc.perform(put("/api/v1/ratings/{id}", 2)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -153,7 +153,7 @@ public class RatingControllerTest {
     }
 
     @Test
-    public void testUpdateRating_withInvalidRatingId_notSuccess() throws Exception {
+    void givenInvalidId_whenUpdateRating_thenReturnsNotFound() throws Exception {
         mockMvc.perform(put("/api/v1/ratings/{id}", 1001)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -168,14 +168,14 @@ public class RatingControllerTest {
     }
 
     @Test
-    public void testDeleteRating_success() throws Exception {
+    void givenValidId_whenDeleteRating_thenReturnsNoContent() throws Exception {
         mockMvc.perform(delete("/api/v1/ratings/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    public void testDeleteRating_withInvalidRatingId_notSuccess() throws Exception {
+    void givenInvalidId_whenDeleteRating_thenReturnsNotFound() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/ratings/{id}", 1001L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())

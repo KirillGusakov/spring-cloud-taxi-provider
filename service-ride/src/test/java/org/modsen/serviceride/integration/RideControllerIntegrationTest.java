@@ -37,10 +37,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = "rating-topic")
 @SpringBootTest(properties = "spring.kafka.producer.bootstrap-servers=${spring.embedded.kafka.brokers}")
-public class RideControllerTest {
+public class RideControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
     @MockBean
     private DriverClient driverClient;
 
@@ -65,7 +66,7 @@ public class RideControllerTest {
     }
 
     @Test
-    void testFindAll_withoutFilters_success() throws Exception {
+    void givenNoFilters_whenFindAll_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
                         .param("page", "0")
@@ -76,7 +77,7 @@ public class RideControllerTest {
     }
 
     @Test
-    void testFindAll_withFilter_success() throws Exception {
+    void givenFilters_whenFindAll_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
                         .param("driverId", "3")
@@ -87,14 +88,14 @@ public class RideControllerTest {
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rides.size()", greaterThan(0) ))
+                .andExpect(jsonPath("$.rides.size()", greaterThan(0)))
                 .andExpect(jsonPath("$.rides[0].pickupAddress", is("Dana mall")))
                 .andExpect(jsonPath("$.rides[0].destinationAddress", is("Galereya Minsk")))
                 .andExpect(jsonPath("$.rides[0].status", is("CANCELED")));
     }
 
     @Test
-    void testFindAll_emptyList_success() throws Exception {
+    void givenNoRides_whenFindAll_thenReturnEmptyList() throws Exception {
         mockMvc.perform(get("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
                         .param("driverId", "999")
@@ -109,7 +110,7 @@ public class RideControllerTest {
     }
 
     @Test
-    void testFindRideById_success() throws Exception {
+    void givenValidId_whenFindRideById_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/rides/{id}", 3L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -122,7 +123,7 @@ public class RideControllerTest {
     }
 
     @Test
-    void testFindRideById_withInvalidRideId_notSuccess() throws Exception {
+    void givenInvalidRideId_whenFindRideById_thenNotFound() throws Exception {
         mockMvc.perform(get("/api/v1/rides/{id}", 1001L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -130,7 +131,7 @@ public class RideControllerTest {
     }
 
     @Test
-    public void testSaveRide_success() throws Exception {
+    public void givenValidRideRequest_whenSaveRide_thenSuccess() throws Exception {
         String rideRequestJson = """
                 {
                     "driverId": 1,
@@ -163,7 +164,7 @@ public class RideControllerTest {
     }
 
     @Test
-    public void testSaveRide_notSuccessWithDriverId() throws Exception {
+    public void givenInvalidDriverId_whenSaveRide_thenNotFound() throws Exception {
         String rideRequestJson = """
                 {
                     "driverId": 1001,
@@ -186,7 +187,7 @@ public class RideControllerTest {
     }
 
     @Test
-    public void testSaveRide_notSuccessWithPassengerId() throws Exception {
+    public void givenInvalidPassengerId_whenSaveRide_thenNotFound() throws Exception {
         String rideRequestJson = """
                 {
                     "driverId": 1,
@@ -212,7 +213,7 @@ public class RideControllerTest {
     }
 
     @Test
-    public void testUpdateRide_success() throws Exception {
+    public void givenValidRideRequest_whenUpdateRide_thenSuccess() throws Exception {
         String rideRequestJson = """
                 {
                     "driverId": 1,
@@ -245,7 +246,7 @@ public class RideControllerTest {
     }
 
     @Test
-    public void testUpdateRide_notSuccessWithDriverId() throws Exception {
+    public void givenInvalidDriverId_whenUpdateRide_thenNotFound() throws Exception {
         String rideRequestJson = """
                 {
                     "driverId": 1001,
@@ -268,7 +269,7 @@ public class RideControllerTest {
     }
 
     @Test
-    public void testUpdateRide_notSuccessWithPassengerId() throws Exception {
+    public void givenInvalidPassengerId_whenUpdateRide_thenNotFound() throws Exception {
         String rideRequestJson = """
                 {
                     "driverId": 1,
@@ -295,7 +296,7 @@ public class RideControllerTest {
     }
 
     @Test
-    public void testUpdateRide_notSuccessWithNoRideId() throws Exception {
+    public void givenInvalidRideId_whenUpdateRide_thenNotFound() throws Exception {
         String rideRequestJson = """
                 {
                     "driverId": 1,
@@ -315,14 +316,14 @@ public class RideControllerTest {
     }
 
     @Test
-    public void testDeleteRide_success() throws Exception {
+    public void givenValidId_whenDeleteRide_thenNoContent() throws Exception {
         mockMvc.perform(delete("/api/v1/rides/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    public void testDeleteRide_notFound() throws Exception {
+    public void givenInvalidId_whenDeleteRide_thenNotFound() throws Exception {
         mockMvc.perform(delete("/api/v1/rides/{id}", 1001)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());

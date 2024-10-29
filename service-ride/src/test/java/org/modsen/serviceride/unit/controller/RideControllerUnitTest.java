@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(RideController.class)
-public class RideControllerTest {
+public class RideControllerUnitTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -48,6 +48,7 @@ public class RideControllerTest {
 
     @BeforeEach
     void setUp() {
+        // Given
         rideResponse = RideResponse.builder()
                 .id(1L)
                 .driverId(100L)
@@ -73,13 +74,16 @@ public class RideControllerTest {
 
     @Test
     void getAllRides_success() throws Exception {
+        // Given
         when(rideService.findAll(any(PageRequest.class), any())).thenReturn(ridePage);
 
+        // When
         mockMvc.perform(get("/api/v1/rides")
                         .param("page", "0")
                         .param("size", "10")
                         .param("sort", "id,asc")
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rides", hasSize(1)))
                 .andExpect(jsonPath("$.rides[0].driverId", is(100)))
@@ -90,10 +94,13 @@ public class RideControllerTest {
 
     @Test
     void getRideById_success() throws Exception {
+        // Given
         when(rideService.findById(1L)).thenReturn(rideResponse);
 
+        // When
         mockMvc.perform(get("/api/v1/rides/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.driverId", is(100)))
@@ -104,8 +111,10 @@ public class RideControllerTest {
 
     @Test
     void saveRide_success() throws Exception {
+        // Given
         when(rideService.save(any(RideRequest.class))).thenReturn(rideResponse);
 
+        // When
         mockMvc.perform(post("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -118,6 +127,7 @@ public class RideControllerTest {
                                     "price": 10.0
                                 }
                                 """))
+                // Then
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.driverId", is(100)))
                 .andExpect(jsonPath("$.passengerId", is(200)))
@@ -129,8 +139,10 @@ public class RideControllerTest {
 
     @Test
     void updateRide_success() throws Exception {
+        // Given
         when(rideService.update(eq(1L), any(RideRequest.class))).thenReturn(rideResponse);
 
+        // When
         mockMvc.perform(put("/api/v1/rides/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -143,6 +155,7 @@ public class RideControllerTest {
                                     "price": 10.0
                                 }
                                 """))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.driverId", is(100)))
                 .andExpect(jsonPath("$.passengerId", is(200)));
@@ -152,10 +165,13 @@ public class RideControllerTest {
 
     @Test
     void deleteRide_success() throws Exception {
+        // Given
         doNothing().when(rideService).delete(1L);
 
+        // When
         mockMvc.perform(delete("/api/v1/rides/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isNoContent());
 
         verify(rideService, times(1)).delete(1L);
@@ -163,12 +179,15 @@ public class RideControllerTest {
 
     @Test
     void updateRideStatus_success() throws Exception {
+        // Given
         rideResponse.setStatus("ACCEPTED");
         when(rideService.updateRideStatus(1L, "ACCEPTED")).thenReturn(rideResponse);
 
+        // When
         mockMvc.perform(patch("/api/v1/rides/{id}/status", 1L)
                         .param("status", "ACCEPTED")
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("ACCEPTED")));
 

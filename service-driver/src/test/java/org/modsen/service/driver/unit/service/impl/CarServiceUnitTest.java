@@ -1,7 +1,7 @@
 package org.modsen.service.driver.unit.service.impl;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,12 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CarServiceImplTest {
+@DisplayName("Car service unit tests")
+public class CarServiceUnitTest {
 
     @Mock
     private CarRepository carRepository;
@@ -65,67 +64,83 @@ public class CarServiceImplTest {
     }
 
     @Test
-    void saveCar_success() {
+    void givenValidCarRequest_whenSaveCar_thenCarIsSavedSuccessfully() {
+        // Given
         when(carRepository.existsByNumberAndIdNot("AA-7777-7", 0L)).thenReturn(false);
-        when(carRepository.save(car)).thenReturn(car);
         when(carMapper.carRequestDtoToCar(carRequest)).thenReturn(car);
+        when(carRepository.save(car)).thenReturn(car);
         when(carMapper.carToCarResponseDto(car)).thenReturn(carResponse);
 
+        // When
         CarResponseDto save = carService.save(carRequest);
 
-        Assertions.assertNotNull(save);
-        Assertions.assertEquals(carResponse, save);
+        // Then
+        assertNotNull(save);
+        assertEquals(carResponse, save);
         verify(carRepository, times(1)).save(car);
     }
 
     @Test
-    void updateCar_success() {
+    void givenValidCarRequest_whenUpdateCar_thenCarIsUpdatedSuccessfully() {
+        // Given
         when(carRepository.existsByNumberAndIdNot(carRequest.getNumber(), 0L)).thenReturn(false);
-        when(carRepository.save(car)).thenReturn(car);
         when(carMapper.carRequestDtoToCar(carRequest)).thenReturn(car);
+        when(carRepository.save(car)).thenReturn(car);
         when(carMapper.carToCarResponseDto(car)).thenReturn(carResponse);
 
+        // When
         CarResponseDto save = carService.save(carRequest);
 
-        Assertions.assertNotNull(save);
-        Assertions.assertEquals(carResponse, save);
+        // Then
+        assertNotNull(save);
+        assertEquals(carResponse, save);
         verify(carRepository, times(1)).save(car);
     }
 
     @Test
-    void deleteCar_success() {
+    void givenCarId_whenDeleteCar_thenCarIsDeletedSuccessfully() {
+        // Given
         when(carRepository.findById(1L)).thenReturn(Optional.of(car));
+
+        // When
         carService.deleteCar(1L);
+
+        // Then
         verify(carRepository, times(1)).deleteById(1L);
     }
 
     @Test
-    void findCarById_success() {
+    void givenCarId_whenFindCarById_thenCarIsFoundSuccessfully() {
+        // Given
         when(carRepository.findById(1L)).thenReturn(Optional.of(car));
         when(carMapper.carToCarResponseDto(car)).thenReturn(carResponse);
 
+        // When
         CarResponseDto byId = carService.findById(1L);
 
-        Assertions.assertNotNull(byId);
-        Assertions.assertEquals(carResponse, byId);
+        // Then
+        assertNotNull(byId);
+        assertEquals(carResponse, byId);
         verify(carRepository, times(1)).findById(1L);
     }
 
     @Test
-    void findAllCars_success() {
+    void givenPageableAndModel_whenFindAllCars_thenReturnFilteredCars() {
+        // Given
         Pageable pageable = PageRequest.of(0, 10);
         Page<Car> cars = new PageImpl<>(Collections.singletonList(car));
-
         when(carRepository.findByModelContainingIgnoreCaseAndNumberContainingIgnoreCase(
                 any(String.class), any(String.class), eq(pageable))).thenReturn(cars);
         when(carMapper.carToCarResponseDto(car)).thenReturn(carResponse);
 
-        Page<CarResponseDto> result =
-                carService.findAll(pageable, "BMW", null);
+        // When
+        Page<CarResponseDto> result = carService.findAll(pageable, "BMW", null);
 
+        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         verify(carRepository, times(1))
                 .findByModelContainingIgnoreCaseAndNumberContainingIgnoreCase("BMW", "", pageable);
     }
 }
+

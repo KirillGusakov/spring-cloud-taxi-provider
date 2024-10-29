@@ -2,6 +2,7 @@ package org.modsen.service.driver.unit.service.impl;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,7 +35,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class DriverServiceImplTest {
+@DisplayName("Driver service unit tests")
+public class DriverServiceUnitTest {
 
     @Mock
     private DriverRepository driverRepository;
@@ -58,7 +60,6 @@ public class DriverServiceImplTest {
 
     @BeforeEach
     void setUp() {
-
         car = Car.builder()
                 .id(1L)
                 .color("blue")
@@ -104,71 +105,89 @@ public class DriverServiceImplTest {
     }
 
     @Test
-    void saveDriver_success() {
+    void givenValidDriverRequest_whenSaveDriver_thenReturnSavedDriver() {
+        // given
         when(driverRepository.existsByPhoneNumberAndIdNot(driverRequest.getPhoneNumber(), 0L)).thenReturn(false);
         when(carRepository.existsByNumberAndIdNot(carRequest.getNumber(), 0L)).thenReturn(false);
         when(driverMapper.driverRequestDtoToDriver(driverRequest)).thenReturn(driver);
         when(driverRepository.save(driver)).thenReturn(driver);
         when(driverMapper.driverToDriverResponseDto(driver)).thenReturn(driverResponse);
 
+        // when
         DriverResponseDto savedDriver = driverService.saveDriver(driverRequest);
 
+        // then
         assertNotNull(savedDriver);
         assertEquals(driverResponse, savedDriver);
         verify(driverRepository, times(1)).save(driver);
     }
 
     @Test
-    void saveDriver_duplicatePhoneNumber_throwsException() {
+    void givenDuplicatePhoneNumber_whenSaveDriver_thenThrowsDuplicateResourceException() {
+        // given
         when(driverRepository.existsByPhoneNumberAndIdNot(driverRequest.getPhoneNumber(), 0L)).thenReturn(true);
 
+        // when & then
         Assertions.assertThrows(DuplicateResourceException.class, () -> driverService.saveDriver(driverRequest));
     }
 
     @Test
-    void updateDriver_success() {
+    void givenExistingDriver_whenUpdateDriver_thenReturnUpdatedDriver() {
+        // given
         when(driverRepository.findById(1L)).thenReturn(Optional.of(driver));
         when(driverRepository.existsByPhoneNumberAndIdNot(driverRequest.getPhoneNumber(), 1L)).thenReturn(false);
         when(driverRepository.save(driver)).thenReturn(driver);
         when(driverMapper.driverToDriverResponseDto(driver)).thenReturn(driverResponse);
 
+        // when
         DriverResponseDto updatedDriver = driverService.updateDriver(1L, driverRequest);
 
+        // then
         assertNotNull(updatedDriver);
         assertEquals(driverResponse, updatedDriver);
         verify(driverRepository, times(1)).save(driver);
     }
 
     @Test
-    void deleteDriver_success() {
+    void givenDriverId_whenDeleteDriver_thenDriverIsDeleted() {
+        // given
         when(driverRepository.findById(1L)).thenReturn(Optional.of(driver));
+
+        // when
         driverService.deleteDriver(1L);
+
+        // then
         verify(driverRepository, times(1)).deleteById(1L);
     }
 
     @Test
-    void getDriver_success() {
+    void givenDriverId_whenGetDriver_thenReturnDriver() {
+        // given
         when(driverRepository.findById(1L)).thenReturn(Optional.of(driver));
         when(driverMapper.driverToDriverResponseDto(driver)).thenReturn(driverResponse);
 
+        // when
         DriverResponseDto foundDriver = driverService.getDriver(1L);
 
+        // then
         assertNotNull(foundDriver);
         assertEquals(driverResponse, foundDriver);
         verify(driverRepository, times(1)).findById(1L);
     }
 
     @Test
-    void getDrivers_success() {
+    void givenValidSearchCriteria_whenGetDrivers_thenReturnFilteredDrivers() {
+        // given
         Pageable pageable = PageRequest.of(0, 10);
         Page<Driver> drivers = new PageImpl<>(Collections.singletonList(driver));
-
         when(driverRepository.findByNameContainingIgnoreCaseAndPhoneNumberContaining(
                 any(String.class), any(String.class), eq(pageable))).thenReturn(drivers);
         when(driverMapper.driverToDriverResponseDto(driver)).thenReturn(driverResponse);
 
+        // when
         Page<DriverResponseDto> result = driverService.getDrivers(pageable, "Kirill", null);
 
+        // then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         verify(driverRepository, times(1))

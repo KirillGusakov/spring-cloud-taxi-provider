@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class RatingServiceImplTest {
+public class RatingServiceUnitTest {
 
     @Mock
     private RatingRepository ratingRepository;
@@ -80,27 +80,33 @@ public class RatingServiceImplTest {
     }
 
     @Test
-    void findById_success() {
+    void givenExistingId_whenFindById_thenReturnRating() {
+        // Given
         when(ratingRepository.findById(1L)).thenReturn(Optional.of(rating));
         when(ratingMapper.toRatingResponse(rating)).thenReturn(ratingResponse);
 
+        // When
         RatingResponse foundRating = ratingService.findById(1L);
 
+        // Then
         assertNotNull(foundRating);
         assertEquals(ratingResponse, foundRating);
         verify(ratingRepository, times(1)).findById(1L);
     }
 
     @Test
-    void findById_notFound() {
+    void givenNonExistingId_whenFindById_thenThrowException() {
+        // Given
         when(ratingRepository.findById(1L)).thenReturn(Optional.empty());
 
+        // When & Then
         assertThrows(NoSuchElementException.class, () -> ratingService.findById(1L));
         verify(ratingRepository, times(1)).findById(1L);
     }
 
     @Test
-    void findAll_success() {
+    void givenPageRequest_whenFindAll_thenReturnRatings() {
+        // Given
         Pageable pageable = PageRequest.of(0, 10);
         Page<Rating> ratings = new PageImpl<>(Collections.singletonList(rating));
 
@@ -108,53 +114,67 @@ public class RatingServiceImplTest {
                 .thenReturn(ratings);
         when(ratingMapper.toRatingResponse(rating)).thenReturn(ratingResponse);
 
+        // When
         Page<RatingResponse> result = ratingService.findAll(pageable, 2L, 3L, 5);
 
+        // Then
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
         verify(ratingRepository, times(1)).findByFilter(any(Long.class), any(Long.class), any(Integer.class), eq(pageable));
     }
 
     @Test
-    void saveRatingMessage_success() {
+    void givenRatingMessage_whenSaveRatingMessage_thenSaveRating() {
+        // Given
         RatingMessage ratingMessage = new RatingMessage(2L, 3L, 4L);
         Rating savedRating = Rating.builder().driverId(2L).userId(3L).rideId(4L).build();
 
         when(ratingRepository.save(any(Rating.class))).thenReturn(savedRating);
 
+        // When
         ratingService.consumeRating(ratingMessage);
 
+        // Then
         verify(ratingRepository, times(1)).save(any(Rating.class));
     }
 
     @Test
-    void update_success() {
+    void givenValidRequest_whenUpdate_thenReturnUpdatedRating() {
+        // Given
         when(ratingRepository.findById(1L)).thenReturn(Optional.of(rating));
         when(ratingRepository.save(rating)).thenReturn(rating);
         when(ratingMapper.toRatingResponse(rating)).thenReturn(ratingResponse);
 
+        // When
         RatingResponse result = ratingService.update(1L, ratingRequest);
 
+        // Then
         assertNotNull(result);
         assertEquals(ratingResponse, result);
         verify(ratingRepository, times(1)).save(rating);
     }
 
     @Test
-    void delete_success() {
+    void givenExistingId_whenDelete_thenDeleteRating() {
+        // Given
         when(ratingRepository.findById(1L)).thenReturn(Optional.of(rating));
 
+        // When
         ratingService.delete(1L);
 
+        // Then
         verify(ratingRepository, times(1)).deleteById(1L);
     }
 
     @Test
-    void getAverageRatingForDriver_success() {
+    void givenExistingDriverId_whenGetAverageRatingForDriver_thenReturnAverageRating() {
+        // Given
         when(ratingRepository.findAverageRatingByDriverId(2L)).thenReturn(Optional.of(4.5));
 
+        // When
         Double avgRating = ratingService.getAverageRatingForDriver(2L);
 
+        // Then
         assertNotNull(avgRating);
         assertEquals(4.5, avgRating);
         verify(ratingRepository, times(1)).findAverageRatingByDriverId(2L);

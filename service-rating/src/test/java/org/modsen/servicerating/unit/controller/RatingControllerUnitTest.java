@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(RatingController.class)
-public class RatingControllerTest {
+public class RatingControllerUnitTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -63,10 +63,12 @@ public class RatingControllerTest {
     }
 
     @Test
-    void findAllRatings_success() throws Exception {
+    void givenValidRequest_whenFindAllRatings_thenReturnRatings() throws Exception {
+        // Given
         when(ratingService.findAll(any(PageRequest.class), eq(100L), eq(200L), eq(5)))
                 .thenReturn(ratingPage);
 
+        // When
         mockMvc.perform(get("/api/v1/ratings")
                         .param("driverId", "100")
                         .param("userId", "200")
@@ -75,6 +77,7 @@ public class RatingControllerTest {
                         .param("size", "10")
                         .param("sort", "id,asc")
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ratings", hasSize(1)))
                 .andExpect(jsonPath("$.ratings[0].driverId", is(100)))
@@ -84,11 +87,14 @@ public class RatingControllerTest {
     }
 
     @Test
-    void findById_success() throws Exception {
+    void givenExistingId_whenFindById_thenReturnRating() throws Exception {
+        // Given
         when(ratingService.findById(1L)).thenReturn(ratingResponse);
 
+        // When
         mockMvc.perform(get("/api/v1/ratings/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.driverId", is(100)))
@@ -98,9 +104,11 @@ public class RatingControllerTest {
     }
 
     @Test
-    void updateRating_success() throws Exception {
+    void givenValidRequest_whenUpdateRating_thenReturnUpdatedRating() throws Exception {
+        // Given
         when(ratingService.update(eq(1L), any(RatingRequest.class))).thenReturn(ratingResponse);
 
+        // When
         mockMvc.perform(put("/api/v1/ratings/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -110,6 +118,7 @@ public class RatingControllerTest {
                                     "comment": "Great ride!"
                                 }
                                 """))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.driverRating", is(5)))
                 .andExpect(jsonPath("$.passengerRating", is(4)));
@@ -118,22 +127,28 @@ public class RatingControllerTest {
     }
 
     @Test
-    void deleteRating_success() throws Exception {
+    void givenExistingId_whenDeleteRating_thenReturnNoContent() throws Exception {
+        // Given
         doNothing().when(ratingService).delete(1L);
 
+        // When
         mockMvc.perform(delete("/api/v1/ratings/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isNoContent());
 
         verify(ratingService, times(1)).delete(1L);
     }
 
     @Test
-    void findDriverAverageRating_success() throws Exception {
+    void givenValidDriverId_whenFindDriverAverageRating_thenReturnAverageRating() throws Exception {
+        // Given
         when(ratingService.getAverageRatingForDriver(100L)).thenReturn(4.5);
 
+        // When
         mockMvc.perform(get("/api/v1/ratings/driver/{id}/avg", 100L)
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", is(4.5)));
 

@@ -1,5 +1,6 @@
 package org.modsen.servicepassenger.integration;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -30,7 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @Testcontainers
 @AutoConfigureMockMvc
-public class PassengerControllerTest {
+@DisplayName("Passenger integration tests")
+public class PassengerControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -50,7 +52,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testFindAllPassengers_success() throws Exception {
+    void whenFindAllPassengers_givenValidRequest_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/passengers")
                         .param("page", "0")
                         .param("size", "10")
@@ -65,7 +67,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testFindAllPassengers_withEmailFilter_success() throws Exception {
+    void whenFindAllPassengers_givenEmailFilter_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/passengers")
                         .param("email", "kirillov.kirillov@example.com")
                         .param("page", "0")
@@ -82,7 +84,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testSavePassenger_success() throws Exception {
+    void whenSavePassenger_givenValidPassenger_thenSuccess() throws Exception {
         String passengerJson =
                 createPassengerJson("Alexander", "Alexandrov", "alexandrov@gmail.com", "+13523232323");
 
@@ -95,7 +97,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testSavePassenger_withExistEmail_notSuccess() throws Exception {
+    void whenSavePassenger_givenExistingEmail_thenNotSuccess() throws Exception {
         String json = createPassengerJson("Kirill", "Husakou", "kirillov.kirillov@example.com", "+123456789");
         mockMvc.perform(post("/api/v1/passengers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -105,7 +107,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testSavePassenger_withExistPhone_notSuccess() throws Exception {
+    void whenSavePassenger_givenExistingPhone_thenNotSuccess() throws Exception {
         String json = createPassengerJson("Kirill", "Husakou", "kirilllll@example.com", "+109876888881");
         mockMvc.perform(post("/api/v1/passengers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -115,7 +117,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testFindById_success() throws Exception {
+    void whenFindById_givenValidPassengerId_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/passengers/{id}", 4L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -124,7 +126,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testFindById_withInvalidPassengerId_notSuccess() throws Exception {
+    void whenFindById_givenInvalidPassengerId_thenNotSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/passengers/{id}", 1001L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -132,14 +134,14 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void deletePassenger_success() throws Exception {
+    void whenDeletePassenger_givenValidPassengerId_thenSuccess() throws Exception {
         mockMvc.perform(delete("/api/v1/passengers/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    void deletePassenger_withInvalidPassengerId_notSuccess() throws Exception {
+    void whenDeletePassenger_givenInvalidPassengerId_thenNotSuccess() throws Exception {
         mockMvc.perform(delete("/api/v1/passengers/{id}", 1001L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -147,7 +149,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void updatePassenger_success() throws Exception {
+    void whenUpdatePassenger_givenValidPassenger_thenSuccess() throws Exception {
         mockMvc.perform(put("/api/v1/passengers/{id}", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createPassengerJson("Kir", "Husakou", "kir@example.com", "+37544597799")))
@@ -156,7 +158,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void updatePassenger_withInvalidPassengerId_notSuccess() throws Exception {
+    void whenUpdatePassenger_givenInvalidPassengerId_thenNotSuccess() throws Exception {
         mockMvc.perform(put("/api/v1/passengers/{id}", 1001L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createPassengerJson("Kir", "Husakou", "kir@example.com", "+37544597799")))
@@ -165,7 +167,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testUpdatePassenger_withExistEmail_notSuccess() throws Exception {
+    void whenUpdatePassenger_givenExistingEmail_thenNotSuccess() throws Exception {
         mockMvc.perform(put("/api/v1/passengers/{id}", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createPassengerJson("Kir", "Husakou", "kirillov.kirillov@example.com", "+123456789")))
@@ -174,7 +176,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testUpdatePassenger_withExistPhone_notSuccess() throws Exception {
+    void whenUpdatePassenger_givenExistingPhone_thenNotSuccess() throws Exception {
         mockMvc.perform(put("/api/v1/passengers/{id}", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(createPassengerJson("Kir", "Husakou", "alll.johnson@example.com", "+109876888881")))
@@ -183,7 +185,7 @@ public class PassengerControllerTest {
     }
 
     @Test
-    void testCreatePassenger_withInvalidFirstName_notSuccess() throws Exception {
+    void whenCreatePassenger_givenInvalidFirstName_thenNotSuccess() throws Exception {
         String invalidRequest = createPassengerJson(" ", "Kirill", "husakou@gmail.com", "+1515151515");
 
         mockMvc.perform(post("/api/v1/passengers")

@@ -1,5 +1,6 @@
 package org.modsen.service.driver.integration;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -8,7 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -30,7 +30,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @Testcontainers
 @AutoConfigureMockMvc
-public class DriverControllerTest {
+@DisplayName("Driver integration tests")
+public class DriverControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,7 +41,7 @@ public class DriverControllerTest {
             = new PostgreSQLContainer<>(DockerImageName.parse("postgres:latest"));
 
     @DynamicPropertySource
-    static void configurerProperties(DynamicPropertyRegistry registry) {
+    static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
         registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
         registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
@@ -50,12 +51,14 @@ public class DriverControllerTest {
     }
 
     @Test
-    void testFindAllDrivers_success() throws Exception {
+    void givenDriversExist_whenFindAllDrivers_thenReturnDrivers() throws Exception {
+        // When
         mockMvc.perform(get("/api/v1/drivers")
                         .param("page", "0")
                         .param("size", "10")
                         .param("sort", "id")
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.drivers", hasSize(greaterThan(0))))
                 .andExpect(jsonPath("$.pageInfo.currentPage", is(0)))
@@ -65,13 +68,15 @@ public class DriverControllerTest {
     }
 
     @Test
-    void testFindAllDrivers_withNameAndPhoneFilter_success() throws Exception {
+    void givenDriversWithNameAndPhone_whenFindAllDrivers_thenReturnFilteredDrivers() throws Exception {
+        // When
         mockMvc.perform(get("/api/v1/drivers")
                         .param("name", "Rian")
                         .param("phone", "+3752916200")
                         .param("page", "0")
                         .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.drivers", is(not(empty()))))
                 .andExpect(jsonPath("$.drivers[0].name", is("Rian")))
@@ -89,23 +94,28 @@ public class DriverControllerTest {
     }
 
     @Test
-    void testSaveDriver_success() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(post("/api/v1/drivers")
+    void givenNewDriverData_whenSaveDriver_thenReturnCreatedDriver() throws Exception {
+        // Given
+        String newDriverJson = """
+                {
+                    "name": "Alina",
+                    "phoneNumber": "+4444444444",
+                    "sex": "F",
+                    "cars": [
+                        {
+                            "color": "Blue",
+                            "model": "BMW M5",
+                            "number": "AA-5555-5"
+                        }
+                    ]
+                }
+                """;
+
+        // When
+        mockMvc.perform(post("/api/v1/drivers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                    "name": "Alina",
-                                    "phoneNumber": "+4444444444",
-                                    "sex": "F",
-                                    "cars": [
-                                        {
-                                            "color": "Blue",
-                                            "model": "BMW M5",
-                                            "number": "AA-5555-5"
-                                        }
-                                    ]
-                                }
-                                """))
+                        .content(newDriverJson))
+                // Then
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name", is("Alina")))
                 .andExpect(jsonPath("$.phoneNumber", is("+4444444444")))
@@ -113,78 +123,92 @@ public class DriverControllerTest {
                 .andExpect(jsonPath("$.cars", hasSize(1)))
                 .andExpect(jsonPath("$.cars[0].color", is("Blue")))
                 .andExpect(jsonPath("$.cars[0].model", is("BMW M5")))
-                .andExpect(jsonPath("$.cars[0].number", is("AA-5555-5")))
-                .andReturn();
+                .andExpect(jsonPath("$.cars[0].number", is("AA-5555-5")));
     }
 
     @Test
-    void testSaveDriver_withExistPhoneNumber_notSuccess() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(post("/api/v1/drivers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                    "name": "Jane Doe",
-                                    "phoneNumber": "+3752916200",
-                                    "sex": "F",
-                                    "cars": null
-                                }
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Driver with phone number +3752916200 already exists")))
-                .andReturn();
-    }
+    void givenDuplicatePhoneNumber_whenSaveDriver_thenReturnError() throws Exception {
+        // Given
+        String newDriverJson = """
+                {
+                    "name": "Jane Doe",
+                    "phoneNumber": "+3752916200",
+                    "sex": "F",
+                    "cars": null
+                }
+                """;
 
-    @Test
-    void testSaveDriver_withDuplicateCarNumbers_notSuccess() throws Exception {
+        // When
         mockMvc.perform(post("/api/v1/drivers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                    "name": "Michael Scott",
-                                    "phoneNumber": "+1234567892",
-                                    "sex": "M",
-                                    "cars": [
-                                        {
-                                            "color": "Black",
-                                            "model": "BMW X5",
-                                            "number": "BB-5555-5"
-                                        },
-                                        {
-                                            "color": "White",
-                                            "model": "BMW X6",
-                                            "number": "BB-5555-5"
-                                        }
-                                    ]
-                                }
-                                """))
+                        .content(newDriverJson))
+                // Then
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("Driver with phone number +3752916200 already exists")));
+    }
+
+    @Test
+    void givenDuplicateCarNumbers_whenSaveDriver_thenReturnError() throws Exception {
+        // Given
+        String newDriverJson = """
+                {
+                    "name": "Michael Scott",
+                    "phoneNumber": "+1234567892",
+                    "sex": "M",
+                    "cars": [
+                        {
+                            "color": "Black",
+                            "model": "BMW X5",
+                            "number": "BB-5555-5"
+                        },
+                        {
+                            "color": "White",
+                            "model": "BMW X6",
+                            "number": "BB-5555-5"
+                        }
+                    ]
+                }
+                """;
+
+        // When
+        mockMvc.perform(post("/api/v1/drivers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newDriverJson))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Duplicate car number found: BB-5555-5")));
     }
 
     @Test
-    void testSaveDriver_withExistingCarNumberInDatabase_notSuccess() throws Exception {
+    void givenExistingCarNumber_whenSaveDriver_thenReturnError() throws Exception {
+        // Given
+        String newDriverJson = """
+                {
+                    "name": "Jim Halpert",
+                    "phoneNumber": "+1234567893",
+                    "sex": "M",
+                    "cars": [
+                        {
+                            "color": "Silver",
+                            "model": "Audi A4",
+                            "number": "ABC12345"
+                        }
+                    ]
+                }
+                """;
+
+        // When
         mockMvc.perform(post("/api/v1/drivers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                    "name": "Jim Halpert",
-                                    "phoneNumber": "+1234567893",
-                                    "sex": "M",
-                                    "cars": [
-                                        {
-                                            "color": "Silver",
-                                            "model": "Audi A4",
-                                            "number": "ABC12345"
-                                        }
-                                    ]
-                                }
-                                """))
+                        .content(newDriverJson))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Car with number ABC12345 already exists")));
     }
 
     @Test
-    void testCreateDriver_withInvalidName_notSuccess() throws Exception {
+    void givenInvalidDriverName_whenSaveDriver_thenReturnError() throws Exception {
+        // Given
         String invalidDriverJson = """
                 {
                     "name": " ",
@@ -194,9 +218,11 @@ public class DriverControllerTest {
                 }
                 """;
 
+        // When
         mockMvc.perform(post("/api/v1/drivers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalidDriverJson))
+                // Then
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.violations[*].fieldName", containsInAnyOrder("name", "name")))
                 .andExpect(jsonPath("$.violations[*].message", containsInAnyOrder(
@@ -206,18 +232,21 @@ public class DriverControllerTest {
     }
 
     @Test
-    void testUpdateDriver_success() throws Exception {
+    void givenUpdatedDriverData_whenUpdateDriver_thenReturnUpdatedDriver() throws Exception {
+        // Given
         String updatedDriverJson = """
-            {
-                "name": "Jane Doe",
-                "phoneNumber": "+1234567899",
-                "sex": "F"
-            }
-            """;
+                {
+                    "name": "Jane Doe",
+                    "phoneNumber": "+1234567899",
+                    "sex": "F"
+                }
+                """;
 
-        mockMvc.perform(put("/api/v1/drivers/{id}", 1)
+        // When
+        mockMvc.perform(put("/api/v1/drivers/{id}", 4)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatedDriverJson))
+                // Then
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name", is("Jane Doe")))
                 .andExpect(jsonPath("$.phoneNumber", is("+1234567899")))
@@ -225,50 +254,64 @@ public class DriverControllerTest {
     }
 
     @Test
-    void testUpdateDriver_duplicatePhoneNumber_notSuccess() throws Exception {
+    void givenDuplicatePhoneNumber_whenUpdateDriver_thenReturnError() throws Exception {
+        // Given
         String updatedDriverJson = """
-            {
-                "name": "Kirill",
-                "phoneNumber": "+3752916200",
-                "sex": "M"
-            }
-            """;
+                {
+                    "name": "Kirill",
+                    "phoneNumber": "+37529903000",
+                    "sex": "M"
+                }
+                """;
 
+        // When
         mockMvc.perform(put("/api/v1/drivers/{id}", 2)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatedDriverJson))
+                // Then
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Driver with phone number +3752916200 already exists")));
+                .andExpect(jsonPath("$.message", is("Driver with phone number +37529903000 already exists")));
     }
 
     @Test
-    void testUpdateDriver_withInvalidDriverId_notSuccess() throws Exception {
+    void givenNonExistentDriverId_whenUpdateDriver_thenReturnNotFound() throws Exception {
+        // Given
         String updatedDriverJson = """
-            {
-                "name": "Kirill",
-                "phoneNumber": "+15555567890",
-                "sex": "M"
-            }
-            """;
+                {
+                    "name": "Non Existing",
+                    "phoneNumber": "+1234567899",
+                    "sex": "M"
+                }
+                """;
 
-        mockMvc.perform(put("/api/v1/drivers/{id}", 1001L)
+        // When
+        mockMvc.perform(put("/api/v1/drivers/{id}", 1001)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updatedDriverJson))
+                // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Driver with id = 1001 not found")));
     }
 
     @Test
-    void testDeleteDriver_success() throws Exception {
-        mockMvc.perform(delete("/api/v1/drivers/{id}", 1)
-                        .contentType(MediaType.APPLICATION_JSON))
+    void givenDriverId_whenDeleteDriver_thenReturnNoContent() throws Exception {
+        // Given
+        int driverIdToDelete = 1;
+
+        // When
+        mockMvc.perform(delete("/api/v1/drivers/{id}", driverIdToDelete))
+                // Then
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    void testDeleteDriver_withInvalidDriverId_notSuccess() throws Exception {
-        mockMvc.perform(delete("/api/v1/drivers/{id}", 1001)
-                        .contentType(MediaType.APPLICATION_JSON))
+    void givenNonExistentDriverId_whenDeleteDriver_thenReturnNotFound() throws Exception {
+        // Given
+        int nonExistentDriverId = 1001;
+
+        // When
+        mockMvc.perform(delete("/api/v1/drivers/{id}", nonExistentDriverId))
+                // Then
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Driver with id = 1001 not found")));
     }
