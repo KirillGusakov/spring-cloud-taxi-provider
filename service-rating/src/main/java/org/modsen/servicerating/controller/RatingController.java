@@ -2,6 +2,7 @@ package org.modsen.servicerating.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modsen.servicerating.api.RatingApi;
 import org.modsen.servicerating.dto.request.RatingRequest;
 import org.modsen.servicerating.dto.response.PageResponse;
 import org.modsen.servicerating.dto.response.RatingResponse;
@@ -24,7 +25,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/ratings")
-public class RatingController {
+public class RatingController implements RatingApi {
 
     private final RatingService ratingService;
 
