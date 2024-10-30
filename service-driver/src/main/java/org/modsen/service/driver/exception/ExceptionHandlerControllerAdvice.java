@@ -55,4 +55,12 @@ public class ExceptionHandlerControllerAdvice {
     ) {
         return new ErrorMessage(e.getMessage());
     }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorMessage onAccessDeniedException(
+            AccessDeniedException e
+    ) {
+        return new ErrorMessage(e.getMessage());
+    }
 }

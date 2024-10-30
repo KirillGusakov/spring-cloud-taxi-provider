@@ -15,6 +15,9 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     @Query("SELECT AVG(r.driverRating) FROM Rating r WHERE r.driverId = :driverId")
     Optional<Double> findAverageRatingByDriverId(@Param("driverId") Long driverId);
 
+    @Query("SELECT AVG(r.passengerRating) FROM Rating r WHERE r.userId = :userId")
+    Optional<Double> findAverageRatingByUserId(@Param("userId") Long userId);
+
     @Query("SELECT r FROM Rating r " +
             "WHERE (:driverId IS NULL OR r.driverId = :driverId) " +
             "AND (:userId IS NULL OR r.userId = :userId) " +

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import org.modsen.serviceride.dto.filter.RideFilterDto;
 import org.modsen.serviceride.dto.request.RideRequest;
+import org.modsen.serviceride.dto.request.RideUpdateRequest;
 import org.modsen.serviceride.dto.response.RideResponse;
 import org.modsen.serviceride.exception.ErrorResponse;
 import org.modsen.serviceride.exception.ViolationResponse;
@@ -66,7 +67,7 @@ public interface RideApi {
             description = "Ride not found or Driver with id = not found or Passenger with id = not found",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     ResponseEntity<RideResponse> updateRide(@PathVariable("id") Long id,
-                                            @RequestBody @Valid RideRequest rideRequest);
+                                            @RequestBody @Valid RideUpdateRequest rideRequest);
 
     @Operation(summary = "Update the status of a ride", description = "Update the status of a specific ride by ID.")
     @ApiResponse(responseCode = "200", description = "Successfully updated the ride status",

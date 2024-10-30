@@ -1,6 +1,7 @@
 package org.modsen.servicepassenger.exception;
 
 import jakarta.validation.ConstraintViolationException;
+import org.springdoc.api.ErrorMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -43,5 +44,13 @@ public class ExceptionHandlerControllerAdvice {
                 .map(error -> new Violation(error.getPropertyPath().toString(), error.getMessage()))
                 .toList();
         return new ValidationErrorResponse(list);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorMessage onAccessDeniedException(
+            AccessDeniedException e
+    ) {
+        return new ErrorMessage(e.getMessage());
     }
 }

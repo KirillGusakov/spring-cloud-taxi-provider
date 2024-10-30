@@ -2,17 +2,18 @@ package org.modsen.servicepassenger.service;
 
 import org.modsen.servicepassenger.dto.request.PassengerRequestDto;
 import org.modsen.servicepassenger.dto.response.PassengerResponseDto;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Map;
+
 public interface PassengerService {
-    PassengerResponseDto findById(Long id);
+    PassengerResponseDto findById(Long id, String subject);
 
-    Page<PassengerResponseDto> findAll(Pageable pageable, String email, String name, String phone, Boolean isDeleted);
+    Map<String, Object> findAll(Pageable pageable, String email, String name, String phone, Boolean isDeleted);
 
-    PassengerResponseDto save(PassengerRequestDto passengerRequestDto);
+    PassengerResponseDto save(PassengerRequestDto passengerRequestDto, String subject);
 
-    PassengerResponseDto update(Long id, PassengerRequestDto passengerRequestDto);
+    PassengerResponseDto update(Long id, PassengerRequestDto passengerRequestDto, String subject);
 
-    void delete(Long id);
+    void delete(Long id, String subject);
 }

@@ -11,6 +11,8 @@ import org.modsen.servicepassenger.dto.response.PassengerResponseDto;
 import org.modsen.servicepassenger.exception.ErrorResponse;
 import org.modsen.servicepassenger.exception.ValidationErrorResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,14 +37,16 @@ public interface PassengerApi {
     @ApiResponse(responseCode = "200", description = "Passenger found by id",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PassengerResponseDto.class)))
     @ApiResponse(responseCode = "404", description = "Passenger not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    ResponseEntity<PassengerResponseDto> findById(@PathVariable("id") Long id);
+    ResponseEntity<PassengerResponseDto> findById(@PathVariable("id") Long id,
+                                                  @AuthenticationPrincipal Jwt jwt);
 
     @Operation(summary = "Create a new passenger", description = "Create a new passenger with the provided details.")
     @ApiResponse(responseCode = "201", description = "Passenger created successfully",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PassengerResponseDto.class)))
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ValidationErrorResponse.class)))
     @ApiResponse(responseCode = "400", description = "passenger with email/phone already exists", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    ResponseEntity<PassengerResponseDto> createPassenger(@Valid @RequestBody PassengerRequestDto requestDto);
+    ResponseEntity<PassengerResponseDto> createPassenger(@Valid @RequestBody PassengerRequestDto requestDto,
+                                                         @AuthenticationPrincipal Jwt jwt);
 
     @Operation(summary = "Update a passenger", description = "Update an existing passenger's details by ID.")
     @ApiResponse(responseCode = "200", description = "Passenger updated successfully",
@@ -51,10 +55,12 @@ public interface PassengerApi {
     @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ValidationErrorResponse.class)))
     @ApiResponse(responseCode = "400", description = "passenger with email/phone already exists", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     ResponseEntity<PassengerResponseDto> updatePassenger(@PathVariable("id") Long id,
-                                                         @RequestBody @Valid PassengerRequestDto requestDto);
+                                                         @RequestBody @Valid PassengerRequestDto requestDto,
+                                                         @AuthenticationPrincipal Jwt jwt);
 
     @Operation(summary = "Delete a passenger", description = "Soft delete a passenger by setting its status to deleted.")
     @ApiResponse(responseCode = "204", description = "Passenger deleted successfully")
     @ApiResponse(responseCode = "404", description = "Passenger with id = not found", content = @Content (schema = @Schema(implementation = ErrorResponse.class)))
-    ResponseEntity<Void> deletePassenger(@PathVariable("id") Long id);
+    ResponseEntity<Void> deletePassenger(@PathVariable("id") Long id,
+                                         @AuthenticationPrincipal Jwt jwt);
 }

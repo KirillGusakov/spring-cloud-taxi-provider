@@ -12,7 +12,7 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5434:5432"
     restart: unless-stopped
     networks:
       - taxi-network
@@ -152,6 +152,30 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 1
+    networks:
+      - taxi-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak_db
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8082
+
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+    command: start-dev
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - taxi-network
 

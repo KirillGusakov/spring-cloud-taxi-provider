@@ -5,14 +5,14 @@ import lombok.RequiredArgsConstructor;
 import org.modsen.serviceride.api.RideApi;
 import org.modsen.serviceride.dto.filter.RideFilterDto;
 import org.modsen.serviceride.dto.request.RideRequest;
-import org.modsen.serviceride.dto.response.PageResponse;
+import org.modsen.serviceride.dto.request.RideUpdateRequest;
 import org.modsen.serviceride.dto.response.RideResponse;
 import org.modsen.serviceride.service.RideService;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -35,6 +34,7 @@ public class RideController implements RideApi {
     private final RideService rideService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllRides(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size,
@@ -49,41 +49,35 @@ public class RideController implements RideApi {
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, sortOrder);
-        Page<RideResponse> ridePage = rideService.findAll(pageRequest, rideFilterDto);
+        Map<String, Object> pageResponse = rideService.findAll(pageRequest, rideFilterDto);
 
-        Map<String, Object> response = new HashMap();
-        PageResponse pageResponse = PageResponse.builder()
-                .currentPage(ridePage.getNumber())
-                .totalItems(ridePage.getTotalElements())
-                .totalPages(ridePage.getTotalPages())
-                .pageSize(ridePage.getSize())
-                .build();
-
-        response.put("rides", ridePage.getContent());
-        response.put("pageInfo", pageResponse);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(pageResponse);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<RideResponse> getRideById(@PathVariable("id") Long id) {
         RideResponse ride = rideService.findById(id);
         return ResponseEntity.ok(ride);
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<RideResponse> saveRide(@RequestBody @Valid RideRequest rideRequest) {
         RideResponse savedRide = rideService.save(rideRequest);
         return new ResponseEntity<>(savedRide, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<RideResponse> updateRide(@PathVariable("id") Long id,
-                                                   @RequestBody @Valid RideRequest rideRequest) {
+                                                   @RequestBody @Valid RideUpdateRequest rideRequest) {
         RideResponse updatedRide = rideService.update(id, rideRequest);
         return ResponseEntity.ok(updatedRide);
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<RideResponse> updateRideStatus(@PathVariable Long id,
                                                          @RequestParam("status") String status) {
         RideResponse updatedRide = rideService.updateRideStatus(id, status);
@@ -91,6 +85,7 @@ public class RideController implements RideApi {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteRide(@PathVariable("id") Long id) {
         rideService.delete(id);
         return ResponseEntity.noContent().build();

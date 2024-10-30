@@ -1,27 +1,31 @@
 package org.modsen.serviceride.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.modsen.serviceride.client.DriverClient;
-import org.modsen.serviceride.client.PassengerClient;
 import org.modsen.serviceride.dto.filter.RideFilterDto;
 import org.modsen.serviceride.dto.message.RatingMessage;
 import org.modsen.serviceride.dto.request.RideRequest;
-import org.modsen.serviceride.dto.response.DriverResponse;
-import org.modsen.serviceride.dto.response.PassengerResponse;
+import org.modsen.serviceride.dto.request.RideUpdateRequest;
+import org.modsen.serviceride.dto.response.PageResponse;
 import org.modsen.serviceride.dto.response.RideResponse;
 import org.modsen.serviceride.mapper.RideMapper;
 import org.modsen.serviceride.model.Ride;
 import org.modsen.serviceride.model.RideStatus;
 import org.modsen.serviceride.repository.RideRepository;
 import org.modsen.serviceride.service.RideService;
+import org.modsen.serviceride.util.DoRequestUtil;
+import org.modsen.serviceride.util.RideUtil;
 import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -29,49 +33,57 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class RideServiceImpl implements RideService {
 
-    private final RideRepository rideRepository;
+    private final RideUtil rideUtil;
     private final RideMapper rideMapper;
-    private final DriverClient driverClient;
-    private final PassengerClient passengerClient;
-    private final KafkaTemplate <String, RatingMessage> kafkaTemplate;
+    private final DoRequestUtil doRequestUtil;
+    private final RideRepository rideRepository;
+    private final KafkaTemplate<String, RatingMessage> kafkaTemplate;
 
     @Override
     @Transactional(readOnly = true)
     public RideResponse findById(Long id) {
         Ride ride = rideRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Ride with id = " + id + " not found"));
+
+        if (checkIsAdmin()) {
+            doRequestUtil.validateAccessForDriverAndPassenger(ride.getDriverId(), ride.getPassengerId());
+        }
+
         return rideMapper.toRideResponse(ride);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<RideResponse> findAll(Pageable pageable, RideFilterDto filterDto) {
-        Ride ride = Ride.builder()
-                .driverId(filterDto.getDriverId())
-                .passengerId(filterDto.getPassengerId())
-                .destinationAddress(filterDto.getDestinationAddress())
-                .pickupAddress(filterDto.getPickupAddress())
-                .status(filterDto.getStatus() != null ?
-                        RideStatus.valueOf(filterDto.getStatus().toUpperCase()) : null)
+    public Map<String, Object> findAll(Pageable pageable, RideFilterDto filterDto) {
+        Example<Ride> rideExample = rideUtil.createRideExample(filterDto);
+
+        Page<RideResponse> ridePage = rideRepository.findAll(rideExample, pageable)
+                .map(rideMapper::toRideResponse);
+
+        Map<String, Object> response = new HashMap<>();
+
+        PageResponse pageResponse = PageResponse.builder()
+                .currentPage(ridePage.getNumber())
+                .totalItems(ridePage.getTotalElements())
+                .totalPages(ridePage.getTotalPages())
+                .pageSize(ridePage.getSize())
                 .build();
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withIgnoreNullValues()
-                .withMatcher("driverId", ExampleMatcher.GenericPropertyMatchers.exact())
-                .withMatcher("passengerId", ExampleMatcher.GenericPropertyMatchers.exact())
-                .withMatcher("destinationAddress", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
-                .withMatcher("pickupAddress", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
-                .withMatcher("status", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
+        response.put("rides", ridePage.getContent());
+        response.put("pageInfo", pageResponse);
 
-        Example<Ride> rideExample = Example.of(ride, matcher);
-        return rideRepository.findAll(rideExample, pageable)
-                .map(rideMapper::toRideResponse);
+        return response;
     }
 
     @Override
     public RideResponse save(RideRequest rideRequest) {
-        DriverResponse driver = driverClient.getDriver(rideRequest.getDriverId());
-        PassengerResponse passenger = passengerClient.getPassenger(rideRequest.getPassengerId());
+        if (!checkIsAdmin()) {
+            doRequestUtil.validateAccessForDriverAndPassenger(rideRequest.getDriverId(), rideRequest.getPassengerId());
+        } else {
+            doRequestUtil.getDriverResponse(rideRequest.getDriverId());
+            doRequestUtil.getPassengerResponse(rideRequest.getPassengerId());
+        }
+
         Ride ride = rideMapper.toRide(rideRequest);
         ride.setOrderTime(LocalDateTime.now());
         ride.setStatus(RideStatus.CREATED);
@@ -79,8 +91,8 @@ public class RideServiceImpl implements RideService {
 
         RatingMessage message = RatingMessage.builder()
                 .rideId(ride.getId())
-                .driverId(driver.getId())
-                .passengerId(passenger.getId())
+                .driverId(rideRequest.getDriverId())
+                .passengerId(rideRequest.getPassengerId())
                 .build();
 
         kafkaTemplate.send("rating-topic", message);
@@ -88,12 +100,16 @@ public class RideServiceImpl implements RideService {
     }
 
     @Override
-    public RideResponse update(Long id, RideRequest rideRequest) {
+    public RideResponse update(Long id, RideUpdateRequest rideRequest) {
         Ride ride = rideRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Ride with id = " + id + " not found"));
 
-        DriverResponse driver = driverClient.getDriver(rideRequest.getDriverId());
-        PassengerResponse passenger = passengerClient.getPassenger(rideRequest.getPassengerId());
+        if (!checkIsAdmin()) {
+            doRequestUtil.validateAccessForDriverAndPassenger(rideRequest.getDriverId(), rideRequest.getPassengerId());
+        } else {
+            doRequestUtil.getDriverResponse(rideRequest.getDriverId());
+            doRequestUtil.getPassengerResponse(rideRequest.getPassengerId());
+        }
 
         ride.setId(id);
         ride.setPrice(rideRequest.getPrice());
@@ -110,6 +126,7 @@ public class RideServiceImpl implements RideService {
     public void delete(Long id) {
         rideRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Ride with id = " + id + " not found"));
+
         rideRepository.deleteById(id);
     }
 
@@ -118,8 +135,17 @@ public class RideServiceImpl implements RideService {
         Ride ride = rideRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Ride with id = " + id + " not found"));
 
+        if (!checkIsAdmin()) {
+            doRequestUtil.validateAccessForDriverAndPassenger(ride.getDriverId(), ride.getPassengerId());
+        }
+
         ride.setStatus(RideStatus.valueOf(status.toUpperCase()));
         rideRepository.save(ride);
         return rideMapper.toRideResponse(ride);
+    }
+
+    private boolean checkIsAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 }

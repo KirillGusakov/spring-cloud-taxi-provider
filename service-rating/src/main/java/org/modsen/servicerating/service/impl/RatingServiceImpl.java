@@ -1,23 +1,27 @@
 package org.modsen.servicerating.service.impl;
 
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
-import org.modsen.servicerating.client.DriverClient;
-import org.modsen.servicerating.client.PassengerClient;
 import org.modsen.servicerating.dto.message.RatingMessage;
 import org.modsen.servicerating.dto.request.RatingRequest;
-import org.modsen.servicerating.dto.response.DriverResponse;
-import org.modsen.servicerating.dto.response.PassengerResponse;
+import org.modsen.servicerating.dto.response.AverageRating;
+import org.modsen.servicerating.dto.response.PageResponse;
 import org.modsen.servicerating.dto.response.RatingResponse;
 import org.modsen.servicerating.mapper.RatingMapper;
 import org.modsen.servicerating.model.Rating;
 import org.modsen.servicerating.repository.RatingRepository;
 import org.modsen.servicerating.service.RatingService;
+import org.modsen.servicerating.util.DoRequestUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -25,10 +29,9 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class RatingServiceImpl implements RatingService {
 
-    private final RatingRepository ratingRepository;
     private final RatingMapper ratingMapper;
-    private final DriverClient driverClient;
-    private final PassengerClient passengerClient;
+    private final DoRequestUtil doRequestUtil;
+    private final RatingRepository ratingRepository;
 
     @KafkaListener(topics = "rating-topic")
     public void consumeRating(RatingMessage ratingMessage) {
@@ -46,20 +49,46 @@ public class RatingServiceImpl implements RatingService {
     public RatingResponse findById(Long id) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Rating with id = " + id + " not found"));
+
+        if (!checkIsAdmin()){
+            doRequestUtil.validateAccessForDriverAndPassenger(rating.getDriverId(), rating.getUserId());
+        }
+
         return ratingMapper.toRatingResponse(rating);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<RatingResponse> findAll(Pageable pageable, Long driverId, Long userId, Integer driverRating) {
+    public Map<String, Object> findAll(Pageable pageable, Long driverId, Long userId, Integer driverRating) {
         Page<Rating> pageByFilter = ratingRepository.findByFilter(driverId, userId, driverRating, pageable);
-        return pageByFilter.map(ratingMapper::toRatingResponse);
+
+        Page<RatingResponse> convertPage = pageByFilter.map(ratingMapper::toRatingResponse);
+        Map<String, Object> response = new HashMap();
+
+        PageResponse pageResponse = PageResponse.builder()
+                .currentPage(convertPage.getNumber())
+                .totalItems(convertPage.getTotalElements())
+                .totalPages(convertPage.getTotalPages())
+                .pageSize(convertPage.getSize())
+                .build();
+
+        response.put("ratings", convertPage.getContent());
+        response.put("pageInfo", pageResponse);
+
+        return response;
     }
 
     @Override
     public RatingResponse update(Long id, RatingRequest ratingRequest) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Rating with id = " + id + " not found"));
+
+        if (checkIsAdmin()) {
+            doRequestUtil.getDriverResponse(rating.getDriverId());
+            doRequestUtil.getPassengerResponse(rating.getUserId());
+        } else {
+            doRequestUtil.validateAccessForDriverAndPassenger(rating.getDriverId(), rating.getUserId());
+        }
 
         ratingMapper.updateRating(ratingRequest, rating);
         Rating save = ratingRepository.save(rating);
@@ -70,29 +99,32 @@ public class RatingServiceImpl implements RatingService {
     public void delete(Long id) {
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Rating with id = " + id + " not found"));
+
         ratingRepository.deleteById(id);
     }
 
     @Override
-    public Double getAverageRatingForDriver(Long id) {
-        return ratingRepository.findAverageRatingByDriverId(id)
+    public AverageRating getAverageRatingForDriver(Long id) {
+        Double rating = ratingRepository.findAverageRatingByDriverId(id)
                 .orElseThrow(() -> new NoSuchElementException("Driver with id =  " + id + " not found"));
+
+        doRequestUtil.getDriverResponse(id);
+
+        return new AverageRating(rating, LocalDateTime.now());
     }
 
-    private DriverResponse getDriverResponse(Long id) {
-        try {
-            DriverResponse driver = driverClient.getDriver(id);
-            return driver;
-        } catch (FeignException.NotFound e) {
-            throw new NoSuchElementException("Driver with id = " + id + " not found");
-        }
+    @Override
+    public AverageRating getAverageRatingForUser(Long id) {
+        Double rating = ratingRepository.findAverageRatingByUserId(id)
+                .orElseThrow(() -> new NoSuchElementException("Passenger with id =  " + id + " not found"));
+
+        doRequestUtil.getPassengerResponse(id);
+
+        return new AverageRating(rating, LocalDateTime.now());
     }
 
-    private PassengerResponse getPassengerResponse(Long id) {
-        try {
-            return passengerClient.getPassenger(id);
-        } catch (FeignException.NotFound exception) {
-            throw new NoSuchElementException("Passenger with id = " + id + " not found");
-        }
+    private boolean checkIsAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 }

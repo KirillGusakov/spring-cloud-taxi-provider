@@ -18,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -30,6 +31,10 @@ public class Driver {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "sub")
+    private UUID uuid;
+
     private String name;
 
     @Column(name = "phone_number")

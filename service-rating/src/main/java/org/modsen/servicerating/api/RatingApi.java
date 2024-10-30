@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.modsen.servicerating.dto.request.RatingRequest;
+import org.modsen.servicerating.dto.response.AverageRating;
 import org.modsen.servicerating.dto.response.RatingResponse;
 import org.modsen.servicerating.exception.ExceptionResponse;
 import org.modsen.servicerating.exception.ViolationResponse;
@@ -65,5 +66,5 @@ public interface RatingApi {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved the average rating")
     @ApiResponse(responseCode = "404", description = "Driver with id = not found",
             content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
-    ResponseEntity<Double> findDriverRating(@PathVariable("id") Long id);
+    ResponseEntity<AverageRating> findDriverRating(@PathVariable("id") Long id);
 }
