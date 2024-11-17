@@ -1,7 +1,9 @@
 package org.modsen.servicepassenger.integration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.modsen.servicepassenger.util.SecurityTestUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,6 +12,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -32,10 +35,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Testcontainers
 @AutoConfigureMockMvc
 @DisplayName("Passenger integration tests")
+@Transactional
 public class PassengerControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    private String token;
 
     @Container
     private static final PostgreSQLContainer<?> postgreSQLContainer
@@ -51,13 +57,19 @@ public class PassengerControllerIntegrationTest {
         registry.add("spring.liquibase.change-log", () -> "classpath:migrations/db.main-changelog.xml");
     }
 
+    @BeforeEach
+    void setUp() throws Exception {
+        token = SecurityTestUtil.obtainAccessToken();
+    }
+
     @Test
     void whenFindAllPassengers_givenValidRequest_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/passengers")
                         .param("page", "0")
                         .param("size", "10")
                         .param("sort", "id")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.passengers", hasSize(greaterThan(0))))
                 .andExpect(jsonPath("$.pageInfo.currentPage", is(0)))
@@ -72,7 +84,8 @@ public class PassengerControllerIntegrationTest {
                         .param("email", "kirillov.kirillov@example.com")
                         .param("page", "0")
                         .param("size", "10")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.passengers", is(not(empty()))))
                 .andExpect(jsonPath("$.passengers[0].email", is("kirillov.kirillov@example.com")))
@@ -90,7 +103,8 @@ public class PassengerControllerIntegrationTest {
 
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/passengers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(passengerJson))
+                        .content(passengerJson)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email", is("alexandrov@gmail.com")))
                 .andReturn();
@@ -101,7 +115,8 @@ public class PassengerControllerIntegrationTest {
         String json = createPassengerJson("Kirill", "Husakou", "kirillov.kirillov@example.com", "+123456789");
         mockMvc.perform(post("/api/v1/passengers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+                        .content(json)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Passenger with kirillov.kirillov@example.com already exists")));
     }
@@ -111,7 +126,8 @@ public class PassengerControllerIntegrationTest {
         String json = createPassengerJson("Kirill", "Husakou", "kirilllll@example.com", "+109876888881");
         mockMvc.perform(post("/api/v1/passengers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(json))
+                        .content(json)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Passenger with +109876888881 already exists")));
     }
@@ -119,7 +135,8 @@ public class PassengerControllerIntegrationTest {
     @Test
     void whenFindById_givenValidPassengerId_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/passengers/{id}", 4L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(4)))
                 .andExpect(jsonPath("$.email", is("kirillov.kirillov@example.com")));
@@ -128,7 +145,8 @@ public class PassengerControllerIntegrationTest {
     @Test
     void whenFindById_givenInvalidPassengerId_thenNotSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/passengers/{id}", 1001L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Passenger with id = 1001 not found")));
     }
@@ -136,14 +154,16 @@ public class PassengerControllerIntegrationTest {
     @Test
     void whenDeletePassenger_givenValidPassengerId_thenSuccess() throws Exception {
         mockMvc.perform(delete("/api/v1/passengers/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void whenDeletePassenger_givenInvalidPassengerId_thenNotSuccess() throws Exception {
         mockMvc.perform(delete("/api/v1/passengers/{id}", 1001L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Passenger with id = 1001 not found")));
     }
@@ -152,6 +172,7 @@ public class PassengerControllerIntegrationTest {
     void whenUpdatePassenger_givenValidPassenger_thenSuccess() throws Exception {
         mockMvc.perform(put("/api/v1/passengers/{id}", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token)
                         .content(createPassengerJson("Kir", "Husakou", "kir@example.com", "+37544597799")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email", is("kir@example.com")));
@@ -161,6 +182,7 @@ public class PassengerControllerIntegrationTest {
     void whenUpdatePassenger_givenInvalidPassengerId_thenNotSuccess() throws Exception {
         mockMvc.perform(put("/api/v1/passengers/{id}", 1001L)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token)
                         .content(createPassengerJson("Kir", "Husakou", "kir@example.com", "+37544597799")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Passenger with id = 1001 not found")));
@@ -170,6 +192,7 @@ public class PassengerControllerIntegrationTest {
     void whenUpdatePassenger_givenExistingEmail_thenNotSuccess() throws Exception {
         mockMvc.perform(put("/api/v1/passengers/{id}", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token)
                         .content(createPassengerJson("Kir", "Husakou", "kirillov.kirillov@example.com", "+123456789")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Passenger with kirillov.kirillov@example.com already exists")));
@@ -179,6 +202,7 @@ public class PassengerControllerIntegrationTest {
     void whenUpdatePassenger_givenExistingPhone_thenNotSuccess() throws Exception {
         mockMvc.perform(put("/api/v1/passengers/{id}", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token)
                         .content(createPassengerJson("Kir", "Husakou", "alll.johnson@example.com", "+109876888881")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("Passenger with +109876888881 already exists")));
@@ -190,7 +214,8 @@ public class PassengerControllerIntegrationTest {
 
         mockMvc.perform(post("/api/v1/passengers")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidRequest))
+                        .content(invalidRequest)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.violations[*].fieldName", containsInAnyOrder(
                         "firstName",

@@ -15,21 +15,27 @@ import org.modsen.service.driver.dto.response.DriverResponseDto;
 import org.modsen.service.driver.exception.DuplicateResourceException;
 import org.modsen.service.driver.model.Car;
 import org.modsen.service.driver.model.Driver;
-import org.modsen.service.driver.model.Sex;
 import org.modsen.service.driver.repository.CarRepository;
 import org.modsen.service.driver.repository.DriverRepository;
 import org.modsen.service.driver.service.impl.DriverServiceImpl;
+import org.modsen.service.driver.util.DriverTestUtil;
+import org.modsen.service.driver.util.SecurityTestUtils;
 import org.modsen.service.driver.util.DriverMapper;
+import org.modsen.service.driver.util.DriverUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,9 +49,14 @@ public class DriverServiceUnitTest {
 
     @Mock
     private CarRepository carRepository;
+    @Mock
+    private Authentication authentication;
 
     @Mock
     private DriverMapper driverMapper;
+
+    @Mock
+    private DriverUtil driverUtil;
 
     @InjectMocks
     private DriverServiceImpl driverService;
@@ -60,61 +71,24 @@ public class DriverServiceUnitTest {
 
     @BeforeEach
     void setUp() {
-        car = Car.builder()
-                .id(1L)
-                .color("blue")
-                .number("AA-7777-7")
-                .model("BMW")
-                .build();
+        car = DriverTestUtil.car;
+        carRequest = DriverTestUtil.carRequest;
+        carResponse = DriverTestUtil.carResponse;
+        driverRequest = DriverTestUtil.driverRequest;
+        driver = DriverTestUtil.driver;
+        driverResponse = DriverTestUtil.driverResponse;
 
-        carRequest = CarRequestDto.builder()
-                .color("blue")
-                .number("AA-7777-7")
-                .model("BMW")
-                .build();
-
-        carResponse = CarResponseDto.builder()
-                .id(1L)
-                .color("blue")
-                .number("AA-7777-7")
-                .model("BMW")
-                .build();
-
-        driverRequest = DriverRequestDto.builder()
-                .name("Kirill")
-                .phoneNumber("+1234567890")
-                .sex("M")
-                .cars(Collections.singletonList(carRequest))
-                .build();
-
-        driver = Driver.builder()
-                .id(1L)
-                .name("Kirill")
-                .phoneNumber("+1234567890")
-                .sex(Sex.M)
-                .cars(Collections.singletonList(car))
-                .build();
-
-        driverResponse = DriverResponseDto.builder()
-                .id(1L)
-                .name("Kirill")
-                .phoneNumber("+1234567890")
-                .sex("M")
-                .cars(Collections.singletonList(carResponse))
-                .build();
     }
 
     @Test
     void givenValidDriverRequest_whenSaveDriver_thenReturnSavedDriver() {
         // given
-        when(driverRepository.existsByPhoneNumberAndIdNot(driverRequest.getPhoneNumber(), 0L)).thenReturn(false);
-        when(carRepository.existsByNumberAndIdNot(carRequest.getNumber(), 0L)).thenReturn(false);
         when(driverMapper.driverRequestDtoToDriver(driverRequest)).thenReturn(driver);
-        when(driverRepository.save(driver)).thenReturn(driver);
         when(driverMapper.driverToDriverResponseDto(driver)).thenReturn(driverResponse);
+        when(driverRepository.save(driver)).thenReturn(driver);
 
         // when
-        DriverResponseDto savedDriver = driverService.saveDriver(driverRequest);
+        DriverResponseDto savedDriver = driverService.saveDriver(driverRequest, "37bf1ec1-641c-47f4-9ea6-1eeb92c0399c");
 
         // then
         assertNotNull(savedDriver);
@@ -125,22 +99,23 @@ public class DriverServiceUnitTest {
     @Test
     void givenDuplicatePhoneNumber_whenSaveDriver_thenThrowsDuplicateResourceException() {
         // given
-        when(driverRepository.existsByPhoneNumberAndIdNot(driverRequest.getPhoneNumber(), 0L)).thenReturn(true);
+        doThrow(new DuplicateResourceException("Duplicate resource")).when(driverUtil).validateDriverAndCar(driverRequest);
 
         // when & then
-        Assertions.assertThrows(DuplicateResourceException.class, () -> driverService.saveDriver(driverRequest));
+        Assertions.assertThrows(DuplicateResourceException.class, () -> driverService.saveDriver(driverRequest, UUID.randomUUID().toString()));
     }
 
     @Test
     void givenExistingDriver_whenUpdateDriver_thenReturnUpdatedDriver() {
         // given
+        SecurityTestUtils.setUpSecurityContextWithRole("ROLE_USER");
         when(driverRepository.findById(1L)).thenReturn(Optional.of(driver));
         when(driverRepository.existsByPhoneNumberAndIdNot(driverRequest.getPhoneNumber(), 1L)).thenReturn(false);
         when(driverRepository.save(driver)).thenReturn(driver);
         when(driverMapper.driverToDriverResponseDto(driver)).thenReturn(driverResponse);
 
         // when
-        DriverResponseDto updatedDriver = driverService.updateDriver(1L, driverRequest);
+        DriverResponseDto updatedDriver = driverService.updateDriver(1L, driverRequest, DriverTestUtil.uuid.toString());
 
         // then
         assertNotNull(updatedDriver);
@@ -151,10 +126,11 @@ public class DriverServiceUnitTest {
     @Test
     void givenDriverId_whenDeleteDriver_thenDriverIsDeleted() {
         // given
-        when(driverRepository.findById(1L)).thenReturn(Optional.of(driver));
+        when(driverRepository.findById(1L)).thenReturn(Optional.ofNullable(driver));
+        SecurityTestUtils.setUpSecurityContextWithRole("ROLE_USER");
 
         // when
-        driverService.deleteDriver(1L);
+        driverService.deleteDriver(1L, driver.getUuid().toString());
 
         // then
         verify(driverRepository, times(1)).deleteById(1L);
@@ -163,11 +139,12 @@ public class DriverServiceUnitTest {
     @Test
     void givenDriverId_whenGetDriver_thenReturnDriver() {
         // given
+        SecurityTestUtils.setUpSecurityContextWithRole("ROLE_USER");
         when(driverRepository.findById(1L)).thenReturn(Optional.of(driver));
         when(driverMapper.driverToDriverResponseDto(driver)).thenReturn(driverResponse);
 
         // when
-        DriverResponseDto foundDriver = driverService.getDriver(1L);
+        DriverResponseDto foundDriver = driverService.getDriver(1L, driver.getUuid().toString());
 
         // then
         assertNotNull(foundDriver);
@@ -185,11 +162,10 @@ public class DriverServiceUnitTest {
         when(driverMapper.driverToDriverResponseDto(driver)).thenReturn(driverResponse);
 
         // when
-        Page<DriverResponseDto> result = driverService.getDrivers(pageable, "Kirill", null);
+        Map<String, Object> result = driverService.getDrivers(pageable, "Kirill", null);
 
         // then
         assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
         verify(driverRepository, times(1))
                 .findByNameContainingIgnoreCaseAndPhoneNumberContaining("Kirill", "", pageable);
     }

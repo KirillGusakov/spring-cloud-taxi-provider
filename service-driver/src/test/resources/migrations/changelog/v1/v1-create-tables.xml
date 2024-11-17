@@ -29,6 +29,9 @@
             <column name="id" type="BIGSERIAL" autoIncrement="true">
                 <constraints primaryKey="true"/>
             </column>
+            <column name="sub" type="UUID">
+                <constraints nullable="true" unique="true"/>
+            </column>
             <column name="name" type="VARCHAR(50)">
                 <constraints nullable="false"/>
             </column>

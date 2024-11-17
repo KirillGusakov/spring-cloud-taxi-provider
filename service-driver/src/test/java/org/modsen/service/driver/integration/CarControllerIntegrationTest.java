@@ -1,7 +1,9 @@
 package org.modsen.service.driver.integration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.modsen.service.driver.util.SecurityTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,6 +38,8 @@ public class CarControllerIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    private String token;
+
     @Container
     private static final PostgreSQLContainer<?> postgreSQLContainer
             = new PostgreSQLContainer<>(DockerImageName.parse("postgres:latest"));
@@ -50,12 +54,18 @@ public class CarControllerIntegrationTest {
         registry.add("spring.liquibase.change-log", () -> "classpath:migrations/main-test-changelog.xml");
     }
 
+    @BeforeEach
+    void setUp () {
+        token = SecurityTestUtils.obtainAccessToken();
+    }
+
     @Test
     void givenCarsExist_whenFindAllCars_thenReturnAllCars() throws Exception {
         mockMvc.perform(get("/api/v1/cars")
                         .param("page", "0")
                         .param("size", "10")
                         .param("sort", "id")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cars", hasSize(greaterThan(0))))
@@ -72,6 +82,7 @@ public class CarControllerIntegrationTest {
                         .param("number", "HE-333-12")
                         .param("page", "0")
                         .param("size", "10")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cars", is(not(empty()))))
@@ -89,6 +100,7 @@ public class CarControllerIntegrationTest {
         String carRequest = createCarRequest("Red", "Tesla Model S", "XX-7777-7", 1L);
 
         mockMvc.perform(post("/api/v1/cars")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(carRequest))
                 .andExpect(status().isCreated())
@@ -102,6 +114,7 @@ public class CarControllerIntegrationTest {
         String carRequest = createCarRequest("Red", "Tesla Model S", "HE-333-12", 1L);
 
         mockMvc.perform(post("/api/v1/cars")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(carRequest))
                 .andExpect(status().isBadRequest())
@@ -113,6 +126,7 @@ public class CarControllerIntegrationTest {
         String carRequest = createCarRequest("Red", "Tesla Model S", "ABC12545", 1001L);
 
         mockMvc.perform(post("/api/v1/cars")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(carRequest))
                 .andExpect(status().isNotFound())
@@ -124,6 +138,7 @@ public class CarControllerIntegrationTest {
         String carRequest = createCarRequest(" ", "Tesla Model X", "ABC23456", 1L);
 
         mockMvc.perform(post("/api/v1/cars")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(carRequest))
                 .andExpect(status().isBadRequest())
@@ -139,6 +154,7 @@ public class CarControllerIntegrationTest {
     @Test
     void givenExistingCarId_whenFindById_thenReturnCar() throws Exception {
         mockMvc.perform(get("/api/v1/cars/{id}", 1L)
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
@@ -150,6 +166,7 @@ public class CarControllerIntegrationTest {
     @Test
     void givenNonExistingCarId_whenFindById_thenReturnNotFound() throws Exception {
         mockMvc.perform(get("/api/v1/cars/{id}", 1001L)
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Car with id = 1001 not found")));
@@ -160,6 +177,7 @@ public class CarControllerIntegrationTest {
         String carRequest = createCarRequest("Blue", "Tesla Model X", "ABC23456", 1L);
 
         mockMvc.perform(put("/api/v1/cars/{id}", 3L)
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(carRequest))
                 .andExpect(status().isOk())
@@ -173,6 +191,7 @@ public class CarControllerIntegrationTest {
         String carRequest = createCarRequest(" ", "Tesla Model X", "ABC23456", 1L);
 
         mockMvc.perform(put("/api/v1/cars/{id}", 1L)
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(carRequest))
                 .andExpect(status().isBadRequest())
@@ -190,6 +209,7 @@ public class CarControllerIntegrationTest {
         String carRequest = createCarRequest("BLUUUE", "Tesla Model X", "ABC23456", 1001L);
 
         mockMvc.perform(put("/api/v1/cars/{id}", 1L)
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(carRequest))
                 .andExpect(status().isNotFound())
@@ -198,13 +218,15 @@ public class CarControllerIntegrationTest {
 
     @Test
     void givenExistingCarId_whenDeleteCar_thenReturnNoContent() throws Exception {
-        mockMvc.perform(delete("/api/v1/cars/{id}", 1L))
+        mockMvc.perform(delete("/api/v1/cars/{id}", 1L)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void givenNonExistingCarId_whenDeleteCar_thenReturnNotFound() throws Exception {
-        mockMvc.perform(delete("/api/v1/cars/{id}", 1001L))
+        mockMvc.perform(delete("/api/v1/cars/{id}", 1001L)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Car with id = 1001 not found")));
     }

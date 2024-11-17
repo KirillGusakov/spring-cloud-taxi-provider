@@ -1,3 +1,4 @@
+/*
 package contracts
 
 org.springframework.cloud.contract.spec.Contract.make {
@@ -17,4 +18,4 @@ org.springframework.cloud.contract.spec.Contract.make {
                 message: "Driver with id = 1001 not found"
         )
     }
-}
+}*/

@@ -1,4 +1,4 @@
-package org.modsen.servicerating.config;
+package org.modsen.servicepassenger.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

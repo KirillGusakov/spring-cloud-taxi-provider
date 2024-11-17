@@ -86,6 +86,7 @@ public class DriverServiceImpl implements DriverService {
 
         if (checkIsAdmin() || (driver.getUuid() != null && driver.getUuid().toString().equals(sub))) {
             driverRepository.deleteById(id);
+            return;
         }
 
         throw new AccessDeniedException("You can delete only your profile");
@@ -117,7 +118,7 @@ public class DriverServiceImpl implements DriverService {
         return driverUtil.createResponse(driverResponseDto);
     }
 
-    private boolean checkIsAdmin() {
+    public boolean checkIsAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }

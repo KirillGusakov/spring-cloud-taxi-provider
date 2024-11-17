@@ -1,12 +1,16 @@
 package org.modsen.servicerating.integration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modsen.servicerating.dto.message.RatingMessage;
 import org.modsen.servicerating.model.Rating;
 import org.modsen.servicerating.repository.RatingRepository;
+import org.modsen.servicerating.util.DoRequestUtil;
+import org.modsen.servicerating.util.SecurityTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
@@ -30,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Testcontainers
+@Transactional
 @AutoConfigureMockMvc
 @EmbeddedKafka(partitions = 1, topics = "rating-topic")
 @SpringBootTest(properties = "spring.kafka.producer.bootstrap-servers=${spring.embedded.kafka.brokers}")
@@ -41,6 +46,9 @@ public class RatingControllerIntegrationTest {
     private RatingRepository ratingRepository;
     @Autowired
     private KafkaTemplate<String, Object> kafkaTemplate;
+    @MockBean
+    private DoRequestUtil doRequestUtil;
+    private String token;
 
     @Container
     private static final PostgreSQLContainer<?> postgreSQLContainer
@@ -56,12 +64,19 @@ public class RatingControllerIntegrationTest {
         registry.add("spring.liquibase.change-log", () -> "classpath:migrations/main-changelog.xml");
     }
 
+    @BeforeEach
+    void setUp() {
+        token = SecurityTestUtils.obtainAccessToken();
+    }
+
     @Test
     public void givenNoFilters_whenFindAll_thenReturnsRatings() throws Exception {
         mockMvc.perform(get("/api/v1/ratings")
                         .param("page", "0")
                         .param("size", "10")
-                        .param("sort", "id,asc"))
+                        .param("sort", "id,asc")
+                        .header("Authorization", "Bearer " + token)
+                )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ratings.size()", greaterThan(0)))
                 .andExpect(jsonPath("$.pageInfo.totalItems", greaterThan(0)))
@@ -78,7 +93,8 @@ public class RatingControllerIntegrationTest {
                         .param("sort", "id,asc")
                         .param("driverId", "3")
                         .param("userId", "1")
-                        .param("driverRating", "5"))
+                        .param("driverRating", "5")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ratings", hasSize(1)))
                 .andExpect(jsonPath("$.ratings[0].driverId", is(3)))
@@ -93,7 +109,8 @@ public class RatingControllerIntegrationTest {
     @Test
     void givenValidId_whenFindById_thenReturnsRating() throws Exception {
         mockMvc.perform(get("/api/v1/ratings/{id}", 3L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(3)))
                 .andExpect(jsonPath("$.driverId", is(3)))
@@ -106,7 +123,8 @@ public class RatingControllerIntegrationTest {
     @Test
     void givenInvalidId_whenFindById_thenReturnsNotFound() throws Exception {
         mockMvc.perform(get("/api/v1/ratings/{id}", 1001L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Rating with id = 1001 not found")));
     }
@@ -138,6 +156,7 @@ public class RatingControllerIntegrationTest {
     void givenUpdatedRating_whenUpdateRating_thenReturnsUpdatedRating() throws Exception {
         mockMvc.perform(put("/api/v1/ratings/{id}", 2)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token)
                         .content("""
                                 {
                                     "driverRating": 5,
@@ -156,6 +175,7 @@ public class RatingControllerIntegrationTest {
     void givenInvalidId_whenUpdateRating_thenReturnsNotFound() throws Exception {
         mockMvc.perform(put("/api/v1/ratings/{id}", 1001)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token)
                         .content("""
                                 {
                                     "driverRating": 5,
@@ -170,14 +190,16 @@ public class RatingControllerIntegrationTest {
     @Test
     void givenValidId_whenDeleteRating_thenReturnsNoContent() throws Exception {
         mockMvc.perform(delete("/api/v1/ratings/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void givenInvalidId_whenDeleteRating_thenReturnsNotFound() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/ratings/{id}", 1001L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Rating with id = 1001 not found")));
     }

@@ -1,11 +1,14 @@
 package org.modsen.service.driver.unit.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modsen.service.driver.controller.CarController;
 import org.modsen.service.driver.dto.request.CarRequestDto;
 import org.modsen.service.driver.dto.response.CarResponseDto;
 import org.modsen.service.driver.service.CarService;
+import org.modsen.service.driver.util.CarTestUtil;
+import org.modsen.service.driver.util.SecurityTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -25,39 +28,36 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @WebMvcTest(CarController.class)
 public class CarControllerUnitTest {
 
     @Autowired
     private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @MockBean
     private CarService carService;
     private CarRequestDto carRequestDto;
     private CarResponseDto carResponseDto;
     private Page<CarResponseDto> carPage;
+    private String token;
 
     @BeforeEach
     public void setUp() {
-        carRequestDto = CarRequestDto.builder()
-                .color("blue")
-                .model("BMW")
-                .number("7777-AA-7")
-                .build();
+        carRequestDto = CarTestUtil.carRequest;
+        carResponseDto = CarTestUtil.carResponse;
 
-        carResponseDto = CarResponseDto.builder()
-                .id(1L)
-                .color("blue")
-                .model("BMW")
-                .number("7777-AA-7")
-                .build();
+        token = SecurityTestUtils.obtainAccessToken();
     }
+
 
     @Test
     void givenCarDetails_whenSaveCar_thenStatusCreatedAndReturnCar() throws Exception {
@@ -66,15 +66,11 @@ public class CarControllerUnitTest {
 
         // When & Then
         mockMvc.perform(post("/api/v1/cars")
-                        .content("""
-                                  {
-                                  "color": "blue",
-                                  "model": "BMW",
-                                  "number": "7777-AA-7"
-                                  }
-                                """)
+                        .header("Authorization", "Bearer " + token)
+                        .content(objectMapper.writeValueAsString(carRequestDto))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.number", is("7777-AA-7")))
+                .andDo(print())
+                .andExpect(jsonPath("$.number", is("AA-7777-7")))
                 .andExpect(status().isCreated());
 
         verify(carService, times(1)).save(carRequestDto);
@@ -87,15 +83,10 @@ public class CarControllerUnitTest {
 
         // When & Then
         mockMvc.perform(put("/api/v1/cars/1")
-                        .content("""
-                          {
-                          "color": "blue",
-                          "model": "BMW",
-                          "number": "7777-AA-7"
-                          }
-                        """)
+                        .content(objectMapper.writeValueAsString(carRequestDto))
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.number", is("7777-AA-7")))
+                .andExpect(jsonPath("$.number", is("AA-7777-7")))
                 .andExpect(status().isOk());
 
         verify(carService, times(1)).update(eq(1L), any(CarRequestDto.class));
@@ -107,7 +98,8 @@ public class CarControllerUnitTest {
         doNothing().when(carService).deleteCar(eq(1L));
 
         // When & Then
-        mockMvc.perform(delete("/api/v1/cars/1"))
+        mockMvc.perform(delete("/api/v1/cars/1")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
 
         verify(carService, times(1)).deleteCar(eq(1L));
@@ -119,9 +111,10 @@ public class CarControllerUnitTest {
         when(carService.findById(eq(1L))).thenReturn(carResponseDto);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/cars/{id}", 1L))
+        mockMvc.perform(get("/api/v1/cars/{id}", 1L)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.number", is("7777-AA-7")))
+                .andExpect(jsonPath("$.number", is("AA-7777-7")))
                 .andExpect(jsonPath("$.model", is("BMW")));
 
         verify(carService, times(1)).findById(eq(1L));
@@ -142,12 +135,13 @@ public class CarControllerUnitTest {
                         .param("size", "10")
                         .param("sort", "id")
                         .param("model", "BMW")
-                        .param("number", "7777-AA-7")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .param("number", "AA-7777-7")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.cars", hasSize(1)))
                 .andExpect(jsonPath("$.cars[0].model", is("BMW")))
-                .andExpect(jsonPath("$.cars[0].number", is("7777-AA-7")))
+                .andExpect(jsonPath("$.cars[0].number", is("AA-7777-7")))
                 .andExpect(jsonPath("$.pageInfo.totalItems", is(1)))
                 .andExpect(jsonPath("$.pageInfo.totalPages", is(1)));
 

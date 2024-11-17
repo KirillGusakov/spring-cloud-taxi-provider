@@ -9,6 +9,9 @@
             <column name="id" type="bigserial" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="sub" type="UUID">
+                <constraints nullable="true" unique="true"/>
+            </column>
             <column name="email" type="varchar(50)">
                 <constraints unique="true" nullable="false"/>
             </column>

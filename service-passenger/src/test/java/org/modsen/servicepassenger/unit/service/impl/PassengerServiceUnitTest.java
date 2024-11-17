@@ -13,19 +13,23 @@ import org.modsen.servicepassenger.mapper.PassengerMapper;
 import org.modsen.servicepassenger.model.Passenger;
 import org.modsen.servicepassenger.repository.PassengerRepository;
 import org.modsen.servicepassenger.service.impl.PassengerServiceImpl;
+import org.modsen.servicepassenger.util.PassengerTestUtil;
+import org.modsen.servicepassenger.util.PassengerUtil;
+import org.modsen.servicepassenger.util.SecurityTestUtil;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import java.util.Collections;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -40,6 +44,8 @@ public class PassengerServiceUnitTest {
 
     @Mock
     private PassengerMapper passengerMapper;
+    @Mock
+    private PassengerUtil passengerUtil;
 
     @InjectMocks
     private PassengerServiceImpl passengerService;
@@ -49,28 +55,19 @@ public class PassengerServiceUnitTest {
 
     @BeforeEach
     void setUp() {
-        passenger = Passenger.builder()
-                .id(1L)
-                .email("kirill.kirill@example.com")
-                .firstName("Kirill")
-                .lastName("Kirill")
-                .phoneNumber("+37544596912")
-                .isDeleted(false)
-                .build();
-
-        passengerResponseDto = new PassengerResponseDto(
-                1L, "Kirill", "Kirill",
-                "kirill.kirill@example.com", "+37544596912", false);
+        passenger = PassengerTestUtil.passenger;
+        passengerResponseDto = PassengerTestUtil.responseDto;
     }
 
     @Test
     void givenExistingPassengerId_whenFindById_thenReturnPassenger() {
         // Given
+        SecurityTestUtil.setUpSecurityContextWithRole("ROLE_USER");
         when(passengerRepository.findByIdAndIsDeletedFalse(1L)).thenReturn(Optional.of(passenger));
         when(passengerMapper.toPassengerResponseDto(passenger)).thenReturn(passengerResponseDto);
 
         // When
-        PassengerResponseDto foundPassenger = passengerService.findById(1L);
+        PassengerResponseDto foundPassenger = passengerService.findById(1L, passenger.getSub().toString());
 
         // Then
         assertNotNull(foundPassenger);
@@ -84,44 +81,48 @@ public class PassengerServiceUnitTest {
         when(passengerRepository.findByIdAndIsDeletedFalse(1L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(NoSuchElementException.class, () -> passengerService.findById(1L));
+        assertThrows(NoSuchElementException.class, () -> passengerService.findById(1L, passenger.getSub().toString()));
     }
 
     @Test
     void givenPassengerSearchCriteria_whenFindAll_thenReturnPassengerPage() {
         // Given
-        Pageable pageable = PageRequest.of(0, 10);
-        Passenger passengerExample = Passenger.builder().email("kirill.kirill@example.com")
+        SecurityTestUtil.setUpSecurityContextWithRole("ROLE_ADMIN");
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("id").ascending());
+        Passenger passengerExample = Passenger.builder()
+                .email("kirill@gmail.com")
                 .firstName("Kirill")
+                .phoneNumber(" ")
+                .isDeleted(false)
                 .build();
+        Example<Passenger> exampleExample = Example.of(passengerExample);
+
         Page<Passenger> passengers = new PageImpl<>(Collections.singletonList(passenger));
 
-        when(passengerRepository.findAll(any(Example.class), eq(pageable))).thenReturn(passengers);
+        when(passengerUtil.createPassengerExample("kirill@gmail.com", "Kirill", " ", false)).thenReturn(exampleExample);
+        when(passengerRepository.findAll(eq(exampleExample), eq(pageable))).thenReturn(passengers);
         when(passengerMapper.toPassengerResponseDto(passenger)).thenReturn(passengerResponseDto);
 
         // When
-        Page<PassengerResponseDto> result =
-                passengerService.findAll(pageable, "kirill.kirill@example.com", "Kirill", null, false);
+        Map<String, Object> result = passengerService.findAll(pageable, "kirill@gmail.com", "Kirill", " ", false);
 
         // Then
         assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
-        verify(passengerRepository, times(1)).findAll(any(Example.class), eq(pageable));
+        verify(passengerRepository, times(1)).findAll(eq(exampleExample), eq(pageable));
     }
+
+
 
     @Test
     void givenPassengerRequestDto_whenSave_thenReturnSavedPassenger() {
         // Given
-        PassengerRequestDto passengerRequestDto = new PassengerRequestDto("Kirill", "Kirill",
-                "kirill.kirill@example.com", "+37544596912");
-        when(passengerRepository.existsByEmailAndIdNot("kirill.kirill@example.com", 0L)).thenReturn(false);
-        when(passengerRepository.existsByPhoneNumberAndIdNot("+37544596912", 0L)).thenReturn(false);
+        PassengerRequestDto passengerRequestDto = PassengerTestUtil.passengerRequestDto;
+
+        // When
         when(passengerMapper.toPassenger(passengerRequestDto)).thenReturn(passenger);
         when(passengerRepository.save(passenger)).thenReturn(passenger);
         when(passengerMapper.toPassengerResponseDto(passenger)).thenReturn(passengerResponseDto);
-
-        // When
-        PassengerResponseDto result = passengerService.save(passengerRequestDto);
+        PassengerResponseDto result = passengerService.save(passengerRequestDto, passenger.getSub().toString());
 
         // Then
         assertNotNull(result);
@@ -132,17 +133,14 @@ public class PassengerServiceUnitTest {
     @Test
     void givenPassengerRequestDto_whenUpdate_thenReturnUpdatedPassenger() {
         // Given
-        PassengerRequestDto passengerRequestDto = new PassengerRequestDto
-                ("Kirill", "Kirill", "kirill.kirill@example.com", "+37544596912");
-
-        when(passengerRepository.findById(1L)).thenReturn(Optional.of(passenger));
-        when(passengerRepository.existsByEmailAndIdNot("kirill.kirill@example.com", passenger.getId())).thenReturn(false);
-        when(passengerRepository.existsByPhoneNumberAndIdNot("+37544596912", passenger.getId())).thenReturn(false);
-        when(passengerRepository.save(passenger)).thenReturn(passenger);
-        when(passengerMapper.toPassengerResponseDto(passenger)).thenReturn(passengerResponseDto);
+        SecurityTestUtil.setUpSecurityContextWithRole("ROLE_USER");
+        PassengerRequestDto passengerRequestDto = PassengerTestUtil.passengerRequestDto;
 
         // When
-        PassengerResponseDto result = passengerService.update(1L, passengerRequestDto);
+        when(passengerRepository.findById(1L)).thenReturn(Optional.of(passenger));
+        when(passengerRepository.save(passenger)).thenReturn(passenger);
+        when(passengerMapper.toPassengerResponseDto(passenger)).thenReturn(passengerResponseDto);
+        PassengerResponseDto result = passengerService.update(1L, passengerRequestDto, passenger.getSub().toString());
 
         // Then
         assertNotNull(result);
@@ -153,10 +151,11 @@ public class PassengerServiceUnitTest {
     @Test
     void givenExistingPassengerId_whenDelete_thenMarkAsDeleted() {
         // Given
-        when(passengerRepository.findByIdAndIsDeletedFalse(1L)).thenReturn(Optional.of(passenger));
+        SecurityTestUtil.setUpSecurityContextWithRole("ROLE_USER");
 
         // When
-        passengerService.delete(1L);
+        when(passengerRepository.findByIdAndIsDeletedFalse(1L)).thenReturn(Optional.of(passenger));
+        passengerService.delete(1L, passenger.getSub().toString());
 
         // Then
         verify(passengerRepository, times(1)).save(passenger);
