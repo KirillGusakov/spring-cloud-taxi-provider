@@ -1,4 +1,4 @@
-Feature: Ride Controller
+Feature: Ride component testing
 
   Scenario: Retrieve all rides successfully
     When I request all rides

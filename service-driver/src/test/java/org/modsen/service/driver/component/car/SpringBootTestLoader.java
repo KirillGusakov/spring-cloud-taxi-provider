@@ -1,7 +1,6 @@
 package org.modsen.service.driver.component.car;
 
 import javax.sql.DataSource;
-
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;

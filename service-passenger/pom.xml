@@ -32,6 +32,7 @@
         <map.struct>1.6.0</map.struct>
         <lombok>1.18.34</lombok>
         <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
+        <swagger.version>2.2.0</swagger.version>
     </properties>
     <dependencies>
         <dependency>
@@ -155,6 +156,17 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>${logstash-logback-encoder.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${swagger.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
     </dependencies>
 
