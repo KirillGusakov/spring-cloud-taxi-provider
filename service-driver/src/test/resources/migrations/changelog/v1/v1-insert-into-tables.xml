@@ -9,24 +9,28 @@
             <column name="name" value="Kirill"/>
             <column name="phone_number" value="+1234567890"/>
             <column name="sex" value="M"/>
+            <column name="sub" value="123e4567-e89b-12d3-a456-426614174001"/>
         </insert>
 
         <insert tableName="driver">
             <column name="name" value="Jane Smith"/>
             <column name="phone_number" value="+1987654321"/>
             <column name="sex" value="F"/>
+            <column name="sub" value="8d3a22ec-5c4f-4b3d-a1a6-19f07c3f6d7a"/>
         </insert>
 
         <insert tableName="driver">
             <column name="name" value="Alina"/>
             <column name="phone_number" value="+37529903000"/>
             <column name="sex" value="F"/>
+            <column name="sub" value="8d3a22ec-5c4f-4b3d-a1a6-19f07c3f6d7f"/>
         </insert>
 
         <insert tableName="driver">
-        <column name="name" value="Rian"/>
-        <column name="phone_number" value="+3752916200"/>
-        <column name="sex" value="M"/>
+            <column name="name" value="Rian"/>
+            <column name="phone_number" value="+3752916200"/>
+            <column name="sex" value="M"/>
+            <column name="sub" value="8d3a22ec-5c4f-4b3d-a1a6-19f07c3f6d7d"/>
         </insert>
     </changeSet>
 

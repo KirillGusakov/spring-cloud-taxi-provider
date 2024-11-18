@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.util.UUID;
 
 @Entity
 @Data
@@ -24,6 +25,7 @@ public class Passenger {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private UUID sub;
 
     @Column(name = "first_name")
     private String firstName;

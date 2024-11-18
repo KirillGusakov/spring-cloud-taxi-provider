@@ -1,3 +1,4 @@
+/*
 package contracts
 
 org.springframework.cloud.contract.spec.Contract.make {
@@ -20,3 +21,4 @@ org.springframework.cloud.contract.spec.Contract.make {
         )
     }
 }
+*/

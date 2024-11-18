@@ -4,21 +4,25 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modsen.service.driver.dto.request.DriverRequestDto;
 import org.modsen.service.driver.dto.response.DriverResponseDto;
+import org.modsen.service.driver.exception.AccessDeniedException;
 import org.modsen.service.driver.exception.DuplicateResourceException;
 import org.modsen.service.driver.model.Driver;
 import org.modsen.service.driver.model.Sex;
-import org.modsen.service.driver.repository.CarRepository;
 import org.modsen.service.driver.repository.DriverRepository;
 import org.modsen.service.driver.service.DriverService;
 import org.modsen.service.driver.util.DriverMapper;
+import org.modsen.service.driver.util.DriverUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.UUID;
 
 @Service
 @Transactional
@@ -26,92 +30,104 @@ import java.util.Set;
 @Slf4j
 public class DriverServiceImpl implements DriverService {
 
-    private final DriverRepository driverRepository;
+    private final DriverUtil driverUtil;
     private final DriverMapper driverMapper;
-    private final CarRepository carRepository;
+    private final DriverRepository driverRepository;
 
     @Override
-    public DriverResponseDto saveDriver(DriverRequestDto driver) {
+    public DriverResponseDto saveDriver(DriverRequestDto driver, String principal) {
         log.info("Starting to save driver: {}", driver);
-        Set<String> carNumbers = new HashSet<>();
+
+        if(driverRepository.existsByUuid(UUID.fromString(principal))){
+            throw new DuplicateResourceException("You already have an account");
+        }
+
         if (driver.getCars() == null) {
             driver.setCars(new ArrayList<>());
         }
 
-        driver.getCars().forEach(car -> {
-            if (!carNumbers.add(car.getNumber())) {
-                throw new DuplicateResourceException("Duplicate car number found: " + car.getNumber());
-            }
-        });
-
-        boolean isExists = driverRepository.existsByPhoneNumberAndIdNot(driver.getPhoneNumber(), 0L);
-        if (isExists) {
-            throw new DuplicateResourceException("Driver with phone number " + driver.getPhoneNumber() + " already exists");
-        }
-
-        driver.getCars().stream()
-                .filter(carRequestDto -> carRepository.existsByNumberAndIdNot(carRequestDto.getNumber(), 0L))
-                .findAny()
-                .ifPresent(carRequestDto -> {
-                    throw new DuplicateResourceException("Car with number " + carRequestDto.getNumber() + " already exists");
-                });
+        driverUtil.validateDriverAndCar(driver);
 
         Driver driverToDatabase = driverMapper.driverRequestDtoToDriver(driver);
         driverToDatabase.getCars().forEach(car -> car.setDriver(driverToDatabase));
 
-        Driver savedDriver = driverRepository.save(driverToDatabase);
-        return driverMapper.driverToDriverResponseDto(savedDriver);
+        driverToDatabase.setUuid(UUID.fromString(principal));
+        Driver save = driverRepository.save(driverToDatabase);
+        return driverMapper.driverToDriverResponseDto(save);
     }
 
+
+
     @Override
-    public DriverResponseDto updateDriver(Long id, DriverRequestDto driver) {
-        log.info("Starting to update driver with id: {}", id);
+    public DriverResponseDto updateDriver(Long id, DriverRequestDto driver, String sub) {
+      log.info("Starting to update driver with id: {}", id);
+      
         Driver driverToChange = driverRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("Driver with id = " + id + " not found")
         );
 
-        boolean isExists = driverRepository.existsByPhoneNumberAndIdNot(driver.getPhoneNumber(), id);
-        if (isExists) {
-            throw new DuplicateResourceException("Driver with phone number " + driver.getPhoneNumber() + " already exists");
+        if (checkIsAdmin() || (driverToChange.getUuid() != null && driverToChange.getUuid().toString().equals(sub))) {
+            boolean isExists = driverRepository.existsByPhoneNumberAndIdNot(driver.getPhoneNumber(), id);
+            if (isExists) {
+                throw new DuplicateResourceException("Driver with phone number "
+                                                     + driver.getPhoneNumber() + " already exists");
+            }
+
+            driverToChange.setPhoneNumber(driver.getPhoneNumber());
+            driverToChange.setName(driver.getName());
+            driverToChange.setSex(Sex.valueOf(driver.getSex()));
+
+            return driverMapper.driverToDriverResponseDto(driverRepository.save(driverToChange));
         }
 
-        driverToChange.setPhoneNumber(driver.getPhoneNumber());
-        driverToChange.setName(driver.getName());
-        driverToChange.setSex(Sex.valueOf(driver.getSex()));
-
-        Driver updatedDriver = driverRepository.save(driverToChange);
-        return driverMapper.driverToDriverResponseDto(updatedDriver);
+        throw new AccessDeniedException("You can update only your profile");
     }
 
     @Override
-    public void deleteDriver(Long id) {
-        log.info("Starting to delete driver with id: {}", id);
-        driverRepository.findById(id).orElseThrow(
-                () -> new NoSuchElementException("Driver with id = " + id + " not found")
-        );
-        driverRepository.deleteById(id);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public DriverResponseDto getDriver(Long id) {
-        log.info("Starting to fetch driver with id: {}", id);
+    public void deleteDriver(Long id, String sub) {
+      log.info("Starting to delete driver with id: {}", id);
         Driver driver = driverRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("Driver with id = " + id + " not found")
         );
 
-        return driverMapper.driverToDriverResponseDto(driver);
+        if (checkIsAdmin() || (driver.getUuid() != null && driver.getUuid().toString().equals(sub))) {
+            driverRepository.deleteById(id);
+            return;
+        }
+
+        throw new AccessDeniedException("You can delete only your profile");
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<DriverResponseDto> getDrivers(Pageable pageable, String name, String phone) {
+    public DriverResponseDto getDriver(Long id, String principal) {
+        log.info("Starting to fetch driver with id: {}", id);
+        Driver driver = driverRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Driver with id = " + id + " not found"));
+
+        if (checkIsAdmin() || (driver.getUuid() != null && driver.getUuid().toString().equals(principal))) {
+            return driverMapper.driverToDriverResponseDto(driver);
+        }
+
+        throw new AccessDeniedException("You can view only your profile");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getDrivers(Pageable pageable, String name, String phone) {
         log.info("Starting to fetch drivers with name: {} and phone: {}", name, phone);
         Page<Driver> drivers = driverRepository.findByNameContainingIgnoreCaseAndPhoneNumberContaining(
                 name != null ? name : "",
                 phone != null ? phone : "",
                 pageable
         );
-        return drivers.map(driverMapper::driverToDriverResponseDto);
+
+        Page<DriverResponseDto> driverResponseDto = drivers.map(driverMapper::driverToDriverResponseDto);
+        return driverUtil.createResponse(driverResponseDto);
+    }
+
+    public boolean checkIsAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 }

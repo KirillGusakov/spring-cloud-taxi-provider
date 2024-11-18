@@ -4,13 +4,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modsen.servicerating.api.RatingApi;
 import org.modsen.servicerating.dto.request.RatingRequest;
-import org.modsen.servicerating.dto.response.PageResponse;
+import org.modsen.servicerating.dto.response.AverageRating;
 import org.modsen.servicerating.dto.response.RatingResponse;
 import org.modsen.servicerating.service.RatingService;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -30,6 +29,7 @@ public class RatingController implements RatingApi {
     private final RatingService ratingService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> findAll(
             @RequestParam(name = "page", defaultValue = "0") Integer page,
             @RequestParam(name = "size", defaultValue = "10") Integer size,
@@ -46,27 +46,19 @@ public class RatingController implements RatingApi {
         }
 
         PageRequest pageRequest = PageRequest.of(page, size, asc);
-        Page<RatingResponse> ridePage = ratingService.findAll(pageRequest, driverId, userId, driverRating);
+        Map<String, Object> response = ratingService.findAll(pageRequest, driverId, userId, driverRating);
 
-        Map<String, Object> response = new HashMap();
-        PageResponse pageResponse = PageResponse.builder()
-                .currentPage(ridePage.getNumber())
-                .totalItems(ridePage.getTotalElements())
-                .totalPages(ridePage.getTotalPages())
-                .pageSize(ridePage.getSize())
-                .build();
-
-        response.put("ratings", ridePage.getContent());
-        response.put("pageInfo", pageResponse);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<RatingResponse> findById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(ratingService.findById(id));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<RatingResponse> updateRating(@PathVariable("id") Long id,
                                                        @RequestBody @Valid RatingRequest ratingRequest) {
         RatingResponse updated = ratingService.update(id, ratingRequest);
@@ -74,14 +66,23 @@ public class RatingController implements RatingApi {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteRating(@PathVariable("id") Long id) {
         ratingService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/driver/{id}/avg")
-    public ResponseEntity<Double> findDriverRating(@PathVariable("id") Long id) {
-        Double averageRatingForDriver = ratingService.getAverageRatingForDriver(id);
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<AverageRating> findDriverRating(@PathVariable("id") Long id) {
+        AverageRating averageRatingForDriver = ratingService.getAverageRatingForDriver(id);
         return ResponseEntity.ok(averageRatingForDriver);
+    }
+
+    @GetMapping("/passenger/{id}/avg")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<AverageRating> findPassengerRating(@PathVariable("id") Long id) {
+        AverageRating averageRatingForUser = ratingService.getAverageRatingForUser(id);
+        return ResponseEntity.ok(averageRatingForUser);
     }
 }

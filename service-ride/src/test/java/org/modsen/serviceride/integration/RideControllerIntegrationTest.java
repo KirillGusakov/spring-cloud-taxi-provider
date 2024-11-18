@@ -1,11 +1,14 @@
 package org.modsen.serviceride.integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modsen.serviceride.client.DriverClient;
 import org.modsen.serviceride.client.PassengerClient;
 import org.modsen.serviceride.dto.message.RatingMessage;
 import org.modsen.serviceride.dto.response.DriverResponse;
 import org.modsen.serviceride.dto.response.PassengerResponse;
+import org.modsen.serviceride.util.SecurityTestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,6 +58,8 @@ public class RideControllerIntegrationTest {
     private static final PostgreSQLContainer<?> postgreSQLContainer
             = new PostgreSQLContainer<>(DockerImageName.parse("postgres:latest"));
 
+    private String token;
+
     @DynamicPropertySource
     static void configurerProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
@@ -65,12 +70,18 @@ public class RideControllerIntegrationTest {
         registry.add("spring.liquibase.change-log", () -> "classpath:migrations/main-changelog.xml");
     }
 
+    @BeforeEach
+    void setUp() {
+        token = SecurityTestUtils.obtainAccessToken();
+    }
+
     @Test
     void givenNoFilters_whenFindAll_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
                         .param("page", "0")
-                        .param("size", "10"))
+                        .param("size", "10")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rides.size()", greaterThan(0)))
                 .andExpect(jsonPath("$.pageInfo.totalItems", greaterThan(0)));
@@ -86,7 +97,8 @@ public class RideControllerIntegrationTest {
                         .param("destinationAddress", "Galereya Minsk")
                         .param("status", "CANCELED")
                         .param("page", "0")
-                        .param("size", "10"))
+                        .param("size", "10")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rides.size()", greaterThan(0)))
                 .andExpect(jsonPath("$.rides[0].pickupAddress", is("Dana mall")))
@@ -104,7 +116,8 @@ public class RideControllerIntegrationTest {
                         .param("destinationAddress", "Pastovichi")
                         .param("status", "CREATED")
                         .param("page", "0")
-                        .param("size", "10"))
+                        .param("size", "10")
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rides", hasSize(0)));
     }
@@ -112,7 +125,8 @@ public class RideControllerIntegrationTest {
     @Test
     void givenValidId_whenFindRideById_thenSuccess() throws Exception {
         mockMvc.perform(get("/api/v1/rides/{id}", 3L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(3)))
                 .andExpect(jsonPath("$.driverId", is(3)))
@@ -125,7 +139,8 @@ public class RideControllerIntegrationTest {
     @Test
     void givenInvalidRideId_whenFindRideById_thenNotFound() throws Exception {
         mockMvc.perform(get("/api/v1/rides/{id}", 1001L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Ride with id = 1001 not found")));
     }
@@ -153,7 +168,8 @@ public class RideControllerIntegrationTest {
 
         mockMvc.perform(post("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(rideRequestJson))
+                        .content(rideRequestJson)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.driverId", is(1)))
                 .andExpect(jsonPath("$.passengerId", is(1)))
@@ -181,7 +197,8 @@ public class RideControllerIntegrationTest {
 
         mockMvc.perform(post("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(rideRequestJson))
+                        .content(rideRequestJson)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Driver with id = 1001 not found")));
     }
@@ -207,7 +224,8 @@ public class RideControllerIntegrationTest {
 
         mockMvc.perform(post("/api/v1/rides")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(rideRequestJson))
+                        .content(rideRequestJson)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Passenger with id = 1001 not found")));
     }
@@ -236,7 +254,8 @@ public class RideControllerIntegrationTest {
 
         mockMvc.perform(put("/api/v1/rides/{id}", 2)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(rideRequestJson))
+                        .content(rideRequestJson)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.driverId", is(1)))
                 .andExpect(jsonPath("$.passengerId", is(1)))
@@ -263,7 +282,8 @@ public class RideControllerIntegrationTest {
 
         mockMvc.perform(put("/api/v1/rides/{id}", 2)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(rideRequestJson))
+                        .content(rideRequestJson)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Driver with id = 1001 not found")));
     }
@@ -290,7 +310,8 @@ public class RideControllerIntegrationTest {
 
         mockMvc.perform(put("/api/v1/rides/{id}", 2)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(rideRequestJson))
+                        .content(rideRequestJson)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Passenger with id = 1001 not found")));
     }
@@ -310,7 +331,8 @@ public class RideControllerIntegrationTest {
 
         mockMvc.perform(put("/api/v1/rides/{id}", 1001)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(rideRequestJson))
+                        .content(rideRequestJson)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", is("Ride with id = 1001 not found")));
     }
@@ -318,14 +340,16 @@ public class RideControllerIntegrationTest {
     @Test
     public void givenValidId_whenDeleteRide_thenNoContent() throws Exception {
         mockMvc.perform(delete("/api/v1/rides/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     public void givenInvalidId_whenDeleteRide_thenNotFound() throws Exception {
         mockMvc.perform(delete("/api/v1/rides/{id}", 1001)
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
     }
 }

@@ -5,13 +5,14 @@ import lombok.RequiredArgsConstructor;
 import org.modsen.service.driver.api.DriverApi;
 import org.modsen.service.driver.dto.request.DriverRequestDto;
 import org.modsen.service.driver.dto.response.DriverResponseDto;
-import org.modsen.service.driver.dto.response.PageResponse;
 import org.modsen.service.driver.service.DriverService;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -32,31 +32,41 @@ public class DriverController implements DriverApi {
     private final DriverService driverService;
 
     @PostMapping
-    public ResponseEntity<DriverResponseDto> saveDriver(@RequestBody @Valid DriverRequestDto requestDto) {
-        DriverResponseDto responseDto = driverService.saveDriver(requestDto);
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<DriverResponseDto> saveDriver(@RequestBody @Valid DriverRequestDto requestDto,
+                                                        @AuthenticationPrincipal Jwt jwt) {
+        String subject = jwt.getSubject();
+        DriverResponseDto responseDto = driverService.saveDriver(requestDto, subject);
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<DriverResponseDto> updateDriver(@PathVariable("id") Long id,
-                                                          @RequestBody @Valid DriverRequestDto requestDto) {
-        DriverResponseDto responseDto = driverService.updateDriver(id, requestDto);
+                                                          @RequestBody @Valid DriverRequestDto requestDto,
+                                                          @AuthenticationPrincipal Jwt jwt) {
+        DriverResponseDto responseDto = driverService.updateDriver(id, requestDto, jwt.getSubject());
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<DriverResponseDto> deleteDriver(@PathVariable("id") Long id) {
-        driverService.deleteDriver(id);
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<DriverResponseDto> deleteDriver(@PathVariable("id") Long id,
+                                                          @AuthenticationPrincipal Jwt jwt) {
+        driverService.deleteDriver(id, jwt.getSubject());
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DriverResponseDto> getDriver(@PathVariable("id") Long id) {
-        DriverResponseDto responseDto = driverService.getDriver(id);
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<DriverResponseDto> getDriver(@PathVariable("id") Long id,
+                                                       @AuthenticationPrincipal Jwt jwt) {
+        DriverResponseDto responseDto = driverService.getDriver(id, jwt.getSubject());
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> getAllDrivers(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size,
@@ -65,18 +75,8 @@ public class DriverController implements DriverApi {
             @RequestParam(value = "phone", required = false) String phone
     ) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortField));
-        Page<DriverResponseDto> drivers = driverService.getDrivers(pageRequest, name, phone);
+        Map<String, Object> response = driverService.getDrivers(pageRequest, name, phone);
 
-        Map<String, Object> response = new HashMap<>();
-        PageResponse pageResponse = PageResponse.builder()
-                .currentPage(drivers.getNumber())
-                .totalItems(drivers.getTotalElements())
-                .totalPages(drivers.getTotalPages())
-                .pageSize(drivers.getSize())
-                .build();
-
-        response.put("drivers", drivers.getContent());
-        response.put("pageInfo", pageResponse);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

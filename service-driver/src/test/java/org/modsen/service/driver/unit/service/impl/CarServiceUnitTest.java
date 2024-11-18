@@ -12,6 +12,7 @@ import org.modsen.service.driver.dto.response.CarResponseDto;
 import org.modsen.service.driver.model.Car;
 import org.modsen.service.driver.repository.CarRepository;
 import org.modsen.service.driver.service.impl.CarServiceImpl;
+import org.modsen.service.driver.util.CarTestUtil;
 import org.modsen.service.driver.util.CarMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -42,25 +43,9 @@ public class CarServiceUnitTest {
 
     @BeforeEach
     void setUp() {
-        car = Car.builder()
-                .id(1L)
-                .color("blue")
-                .number("AA-7777-7")
-                .model("BMW")
-                .build();
-
-        carResponse = CarResponseDto.builder()
-                .id(1L)
-                .color("blue")
-                .number("AA-7777-7")
-                .model("BMW")
-                .build();
-
-        carRequest = CarRequestDto.builder()
-                .color("blue")
-                .number("AA-7777-7")
-                .model("BMW")
-                .build();
+        car = CarTestUtil.car;
+        carResponse = CarTestUtil.carResponse;
+        carRequest = CarTestUtil.carRequest;
     }
 
     @Test
@@ -143,4 +128,3 @@ public class CarServiceUnitTest {
                 .findByModelContainingIgnoreCaseAndNumberContainingIgnoreCase("BMW", "", pageable);
     }
 }
-

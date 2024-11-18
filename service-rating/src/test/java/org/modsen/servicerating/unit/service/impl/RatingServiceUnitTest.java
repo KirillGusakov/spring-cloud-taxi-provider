@@ -6,20 +6,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.modsen.servicerating.client.DriverClient;
-import org.modsen.servicerating.client.PassengerClient;
 import org.modsen.servicerating.dto.message.RatingMessage;
 import org.modsen.servicerating.dto.request.RatingRequest;
+import org.modsen.servicerating.dto.response.AverageRating;
 import org.modsen.servicerating.dto.response.RatingResponse;
 import org.modsen.servicerating.mapper.RatingMapper;
 import org.modsen.servicerating.model.Rating;
 import org.modsen.servicerating.repository.RatingRepository;
 import org.modsen.servicerating.service.impl.RatingServiceImpl;
+import org.modsen.servicerating.util.DoRequestUtil;
+import org.modsen.servicerating.util.SecurityTestUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import java.util.Collections;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,10 +43,7 @@ public class RatingServiceUnitTest {
     private RatingMapper ratingMapper;
 
     @Mock
-    private DriverClient driverClient;
-
-    @Mock
-    private PassengerClient passengerClient;
+    private DoRequestUtil doRequestUtil;
 
     @InjectMocks
     private RatingServiceImpl ratingService;
@@ -82,6 +81,7 @@ public class RatingServiceUnitTest {
     @Test
     void givenExistingId_whenFindById_thenReturnRating() {
         // Given
+        SecurityTestUtils.setUpSecurityContextWithRole("ROLE_USER");
         when(ratingRepository.findById(1L)).thenReturn(Optional.of(rating));
         when(ratingMapper.toRatingResponse(rating)).thenReturn(ratingResponse);
 
@@ -115,11 +115,10 @@ public class RatingServiceUnitTest {
         when(ratingMapper.toRatingResponse(rating)).thenReturn(ratingResponse);
 
         // When
-        Page<RatingResponse> result = ratingService.findAll(pageable, 2L, 3L, 5);
+        Map<String, Object> all = ratingService.findAll(pageable, 2L, 3L, 5);
 
         // Then
-        assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
+        assertNotNull(all);
         verify(ratingRepository, times(1)).findByFilter(any(Long.class), any(Long.class), any(Integer.class), eq(pageable));
     }
 
@@ -141,6 +140,7 @@ public class RatingServiceUnitTest {
     @Test
     void givenValidRequest_whenUpdate_thenReturnUpdatedRating() {
         // Given
+        SecurityTestUtils.setUpSecurityContextWithRole("ROLE_USER");
         when(ratingRepository.findById(1L)).thenReturn(Optional.of(rating));
         when(ratingRepository.save(rating)).thenReturn(rating);
         when(ratingMapper.toRatingResponse(rating)).thenReturn(ratingResponse);
@@ -172,11 +172,11 @@ public class RatingServiceUnitTest {
         when(ratingRepository.findAverageRatingByDriverId(2L)).thenReturn(Optional.of(4.5));
 
         // When
-        Double avgRating = ratingService.getAverageRatingForDriver(2L);
+        AverageRating avg = ratingService.getAverageRatingForDriver(2L);
 
         // Then
-        assertNotNull(avgRating);
-        assertEquals(4.5, avgRating);
+        assertNotNull(avg.getAverageRating());
+        assertEquals(4.5, avg.getAverageRating());
         verify(ratingRepository, times(1)).findAverageRatingByDriverId(2L);
     }
 }

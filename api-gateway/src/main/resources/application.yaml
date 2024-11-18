@@ -10,6 +10,7 @@ spring:
   application:
     name: api-gateway
 
+
   cloud:
     gateway:
       enabled: true
@@ -18,6 +19,16 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
+        - id: service-driver
+          uri: lb://SERVICE-DRIVER
+          predicates:
+            - Path=/api/v1/drivers/**
+            - Header=Authorization
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: serviceDriverCircuitBreaker
+                fallbackUri: forward:/fallback/drivers
 
         - id: service-passenger
           uri: lb://SERVICE-PASSENGER
@@ -86,4 +97,8 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 5s
         permittedNumberOfCallsInHalfOpenState: 3
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
 
