@@ -19,16 +19,6 @@ spring:
           lower-case-service-id: true
 
       routes:
-        - id: service-driver
-          uri: lb://SERVICE-DRIVER
-          predicates:
-            - Path=/api/v1/drivers/**
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: serviceDriverCircuitBreaker
-                fallbackUri: forward:/fallback/drivers
-
         - id: service-passenger
           uri: lb://SERVICE-PASSENGER
           predicates:
@@ -58,6 +48,16 @@ spring:
               args:
                 name: serviceRideCircuitBreaker
                 fallbackUri: forward:/fallback/rides
+
+        - id: service-driver
+          uri: lb://SERVICE-DRIVER
+          predicates:
+            - Path=/api/v1/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: serviceDriverCircuitBreaker
+                fallbackUri: forward:/fallback/drivers
 
 resilience4j:
   timelimiter:

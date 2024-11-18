@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 import java.net.UnknownHostException;
+import java.net.ConnectException;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -72,5 +73,10 @@ public class ExceptionHandlerControllerAdvice {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse feignException(FeignException.Unauthorized ex) {
         return new ErrorResponse("You need to log in");
+
+    @ExceptionHandler(ConnectException.class)
+    public ResponseEntity<ErrorResponse> connectionException(ConnectException e) {
+        ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.SERVICE_UNAVAILABLE);
     }
 }

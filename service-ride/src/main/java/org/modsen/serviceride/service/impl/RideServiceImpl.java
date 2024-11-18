@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -42,6 +43,7 @@ public class RideServiceImpl implements RideService {
     @Override
     @Transactional(readOnly = true)
     public RideResponse findById(Long id) {
+        log.info("Starting to fetch ride with id: {}", id);
         Ride ride = rideRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Ride with id = " + id + " not found"));
 
@@ -55,6 +57,7 @@ public class RideServiceImpl implements RideService {
     @Override
     @Transactional(readOnly = true)
     public Map<String, Object> findAll(Pageable pageable, RideFilterDto filterDto) {
+        log.info("Starting to fetch all rides with filters: {}", filterDto);
         Example<Ride> rideExample = rideUtil.createRideExample(filterDto);
 
         Page<RideResponse> ridePage = rideRepository.findAll(rideExample, pageable)
@@ -77,6 +80,7 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public RideResponse save(RideRequest rideRequest) {
+        log.info("Starting to save new ride with request: {}", rideRequest);
         if (!checkIsAdmin()) {
             doRequestUtil.validateAccessForDriverAndPassenger(rideRequest.getDriverId(), rideRequest.getPassengerId());
         } else {
@@ -101,6 +105,8 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public RideResponse update(Long id, RideUpdateRequest rideRequest) {
+        log.info("Starting to update ride with id: {} and request: {}", id, rideRequest);
+
         Ride ride = rideRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Ride with id = " + id + " not found"));
 
@@ -124,6 +130,7 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public void delete(Long id) {
+        log.info("Starting to delete ride with id: {}", id);
         rideRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Ride with id = " + id + " not found"));
 
@@ -132,6 +139,7 @@ public class RideServiceImpl implements RideService {
 
     @Override
     public RideResponse updateRideStatus(Long id, String status) {
+        log.info("Starting to update ride status with id: {} to {}", id, status);
         Ride ride = rideRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Ride with id = " + id + " not found"));
 

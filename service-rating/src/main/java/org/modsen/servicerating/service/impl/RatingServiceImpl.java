@@ -5,6 +5,9 @@ import org.modsen.servicerating.dto.message.RatingMessage;
 import org.modsen.servicerating.dto.request.RatingRequest;
 import org.modsen.servicerating.dto.response.AverageRating;
 import org.modsen.servicerating.dto.response.PageResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.modsen.servicerating.dto.message.RatingMessage;
+import org.modsen.servicerating.dto.request.RatingRequest;
 import org.modsen.servicerating.dto.response.RatingResponse;
 import org.modsen.servicerating.mapper.RatingMapper;
 import org.modsen.servicerating.model.Rating;
@@ -27,6 +30,7 @@ import java.util.NoSuchElementException;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class RatingServiceImpl implements RatingService {
 
     private final RatingMapper ratingMapper;
@@ -35,7 +39,7 @@ public class RatingServiceImpl implements RatingService {
 
     @KafkaListener(topics = "rating-topic")
     public void consumeRating(RatingMessage ratingMessage) {
-        System.out.println("Received rating: " + ratingMessage);
+        log.info("Received rating message: {}", ratingMessage);
         Rating saved = Rating.builder()
                 .driverId(ratingMessage.getDriverId())
                 .userId(ratingMessage.getPassengerId())
@@ -47,6 +51,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     @Transactional(readOnly = true)
     public RatingResponse findById(Long id) {
+        log.info("Finding rating by id: {}", id);
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Rating with id = " + id + " not found"));
 
@@ -60,6 +65,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     @Transactional(readOnly = true)
     public Map<String, Object> findAll(Pageable pageable, Long driverId, Long userId, Integer driverRating) {
+        log.info("Finding all ratings with filters - driverId: {}, userId: {}, driverRating: {}", driverId, userId, driverRating);
         Page<Rating> pageByFilter = ratingRepository.findByFilter(driverId, userId, driverRating, pageable);
 
         Page<RatingResponse> convertPage = pageByFilter.map(ratingMapper::toRatingResponse);
@@ -80,6 +86,7 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public RatingResponse update(Long id, RatingRequest ratingRequest) {
+        log.info("Updating rating with id: {}", id);
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Rating with id = " + id + " not found"));
 
@@ -97,6 +104,7 @@ public class RatingServiceImpl implements RatingService {
 
     @Override
     public void delete(Long id) {
+        log.info("Deleting rating with id: {}", id);
         Rating rating = ratingRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Rating with id = " + id + " not found"));
 
@@ -106,6 +114,7 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public AverageRating getAverageRatingForDriver(Long id) {
         Double rating = ratingRepository.findAverageRatingByDriverId(id)
+        log.info("Getting average rating for driver with id: {}", id);
                 .orElseThrow(() -> new NoSuchElementException("Driver with id =  " + id + " not found"));
 
         doRequestUtil.getDriverResponse(id);

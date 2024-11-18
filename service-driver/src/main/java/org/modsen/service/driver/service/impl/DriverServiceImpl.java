@@ -1,6 +1,7 @@
 package org.modsen.service.driver.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modsen.service.driver.dto.request.DriverRequestDto;
 import org.modsen.service.driver.dto.response.DriverResponseDto;
 import org.modsen.service.driver.exception.AccessDeniedException;
@@ -26,6 +27,7 @@ import java.util.UUID;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class DriverServiceImpl implements DriverService {
 
     private final DriverUtil driverUtil;
@@ -34,6 +36,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public DriverResponseDto saveDriver(DriverRequestDto driver, String principal) {
+        log.info("Starting to save driver: {}", driver);
 
         if(driverRepository.existsByUuid(UUID.fromString(principal))){
             throw new DuplicateResourceException("You already have an account");
@@ -57,6 +60,8 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public DriverResponseDto updateDriver(Long id, DriverRequestDto driver, String sub) {
+      log.info("Starting to update driver with id: {}", id);
+      
         Driver driverToChange = driverRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("Driver with id = " + id + " not found")
         );
@@ -80,6 +85,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Override
     public void deleteDriver(Long id, String sub) {
+      log.info("Starting to delete driver with id: {}", id);
         Driver driver = driverRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("Driver with id = " + id + " not found")
         );
@@ -95,6 +101,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public DriverResponseDto getDriver(Long id, String principal) {
+        log.info("Starting to fetch driver with id: {}", id);
         Driver driver = driverRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Driver with id = " + id + " not found"));
 
@@ -108,6 +115,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public Map<String, Object> getDrivers(Pageable pageable, String name, String phone) {
+        log.info("Starting to fetch drivers with name: {} and phone: {}", name, phone);
         Page<Driver> drivers = driverRepository.findByNameContainingIgnoreCaseAndPhoneNumberContaining(
                 name != null ? name : "",
                 phone != null ? phone : "",

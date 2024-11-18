@@ -1,6 +1,7 @@
 package org.modsen.servicepassenger.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modsen.servicepassenger.dto.request.PassengerRequestDto;
 import org.modsen.servicepassenger.dto.response.PageResponse;
 import org.modsen.servicepassenger.dto.response.PassengerResponseDto;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -35,6 +37,7 @@ public class PassengerServiceImpl implements PassengerService {
     @Override
     @Transactional(readOnly = true)
     public PassengerResponseDto findById(Long id, String subject) {
+        log.info("Finding passenger by id: {}", id);
         Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new NoSuchElementException("Passenger with id = " + id + " not found"));
 
@@ -52,6 +55,7 @@ public class PassengerServiceImpl implements PassengerService {
                                                 String name,
                                                 String phone,
                                                 Boolean isDeleted) {
+        log.info("Finding all passengers with filters: email={}, name={}, phone={}, isDeleted={}", email, name, phone, isDeleted);
         Example<Passenger> example = passengerUtil.createPassengerExample(email, name, phone, isDeleted);
 
         Page<PassengerResponseDto> passengerPage = passengerRepository.findAll(example, pageable)
@@ -74,6 +78,7 @@ public class PassengerServiceImpl implements PassengerService {
     @Override
     public PassengerResponseDto save(PassengerRequestDto passengerRequestDto,
                                      String subject) {
+        log.info("Saving new passenger: {}", passengerRequestDto);
         boolean isExist = passengerRepository.existsBySub(UUID.fromString(subject));
 
         if(isExist) {
@@ -93,7 +98,7 @@ public class PassengerServiceImpl implements PassengerService {
     public PassengerResponseDto update(Long id,
                                        PassengerRequestDto passengerRequestDto,
                                        String subject) {
-
+        log.info("Updating passenger with id: {}. New data: {}", id, passengerRequestDto);
         Passenger passenger = passengerRepository.findById(id).orElseThrow(
                 () -> new NoSuchElementException("Passenger with id = " + id + " not found"));
 
@@ -113,6 +118,7 @@ public class PassengerServiceImpl implements PassengerService {
 
     @Override
     public void delete(Long id, String subject) {
+        log.info("Deleting passenger with id: {}", id);
         Passenger passenger = passengerRepository.findByIdAndIsDeletedFalse(id).orElseThrow(() ->
                 new NoSuchElementException("Passenger with id = " + id + " not found"));
 

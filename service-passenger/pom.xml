@@ -31,6 +31,7 @@
         <java.version>21</java.version>
         <map.struct>1.6.0</map.struct>
         <lombok>1.18.34</lombok>
+        <logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
         <swagger.version>2.2.0</swagger.version>
     </properties>
     <dependencies>
@@ -145,6 +146,27 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-contract-spec</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>${logstash-logback-encoder.version}</version>
         </dependency>
 
         <dependency>
