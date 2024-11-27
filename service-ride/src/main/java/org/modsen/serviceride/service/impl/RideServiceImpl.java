@@ -1,6 +1,7 @@
 package org.modsen.serviceride.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modsen.serviceride.dto.filter.RideFilterDto;
 import org.modsen.serviceride.dto.message.RatingMessage;
 import org.modsen.serviceride.dto.request.RideRequest;
@@ -47,7 +48,7 @@ public class RideServiceImpl implements RideService {
         Ride ride = rideRepository.findById(id).orElseThrow(() ->
                 new NoSuchElementException("Ride with id = " + id + " not found"));
 
-        if (checkIsAdmin()) {
+        if (!checkIsAdmin()) {
             doRequestUtil.validateAccessForDriverAndPassenger(ride.getDriverId(), ride.getPassengerId());
         }
 

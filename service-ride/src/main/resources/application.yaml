@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: service-ride
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: postgres
+    url: jdbc:postgresql://localhost:5432/ride
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/main-changelog.xml
+
+  cloud:
+    openfeign:
+      micrometer:
+        enabled: true
+      oauth2:
+        enabled: true
+        clientRegistrationId: taxi-app
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/taxi
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+  tracing:
+    sampling:
+      probability: 1
+    enabled: true
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]"
+  config: classpath:logback.xml
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true

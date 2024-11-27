@@ -125,7 +125,7 @@ services:
       kafka:
         condition: service_started
     ports:
-      - "8080:8080"
+      - "8082:8080"
     networks:
       - taxi-network
     environment:
@@ -184,19 +184,18 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak_db
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: postgres
-
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_PORT: 8082
-
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
     command: start-dev
     ports:
-      - "8082:8080"
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - taxi-network
 
   elasticsearch:
     image: elasticsearch:8.15.3

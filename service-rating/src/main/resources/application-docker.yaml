@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/taxi
+
+  config:
+    activate:
+      on-profile: docker
+
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS}
+
+server:
+  port: 8080
+
+logging:
+  config: classpath:logback-docker.xml
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka:8761/eureka
+  instance:
+    preferIpAddress: true

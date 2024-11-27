@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: service-passenger
+
+  datasource:
+    username: postgres
+    password: postgres
+    url: jdbc:postgresql://localhost:5432/passengers
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.main-changelog.xml
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/taxi
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+  tracing:
+    sampling:
+      probability: 1
+    enabled: true
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]"
+  config: classpath:logback.xml
+
+server:
+  port: 8079
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true

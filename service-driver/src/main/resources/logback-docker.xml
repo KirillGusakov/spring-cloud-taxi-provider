@@ -6,7 +6,7 @@
 
     <appender name="logstash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
         <param name="Encoding" value="UTF-8"/>
-        <destination>localhost:5001</destination>
+        <destination>logstash:5001</destination>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <customFields>{"app_name":"driver-service"}</customFields>
         </encoder>

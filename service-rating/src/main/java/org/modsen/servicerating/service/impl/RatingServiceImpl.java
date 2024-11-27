@@ -114,8 +114,9 @@ public class RatingServiceImpl implements RatingService {
     @Override
     public AverageRating getAverageRatingForDriver(Long id) {
         Double rating = ratingRepository.findAverageRatingByDriverId(id)
-        log.info("Getting average rating for driver with id: {}", id);
                 .orElseThrow(() -> new NoSuchElementException("Driver with id =  " + id + " not found"));
+
+        log.info("Getting average rating for driver with id: {}", id);
 
         doRequestUtil.getDriverResponse(id);
 

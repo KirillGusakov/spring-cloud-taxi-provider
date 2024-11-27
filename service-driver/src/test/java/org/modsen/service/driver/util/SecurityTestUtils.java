@@ -29,7 +29,7 @@ public class SecurityTestUtils {
                     .uri("/realms/taxi/protocol/openid-connect/token")
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .bodyValue("client_id=taxi-app" +
-                               "&client_secret=dA7Pg9Poe8TIX1Ijerj7EdqM3Ei6vAuM" +
+                               "&client_secret=urRF4OEUsRtm5HYKTJBeE3B03no8Zibp" +
                                "&username=kirill" +
                                "&password=password" +
                                "&grant_type=password")

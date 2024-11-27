@@ -73,6 +73,7 @@ public class ExceptionHandlerControllerAdvice {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorResponse feignException(FeignException.Unauthorized ex) {
         return new ErrorResponse("You need to log in");
+    }
 
     @ExceptionHandler(ConnectException.class)
     public ResponseEntity<ErrorResponse> connectionException(ConnectException e) {

@@ -23,7 +23,10 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .authorizeHttpRequests(authorizeRequests -> authorizeRequests.anyRequest().authenticated())
+                .authorizeHttpRequests(authorizeRequests -> authorizeRequests
+                        .requestMatchers("/actuator/**").permitAll()
+                        .anyRequest().authenticated()
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
